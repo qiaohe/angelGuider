@@ -9,13 +9,43 @@ var redis = require('../common/redisClient');
 var md5 = require('md5');
 module.exports = {
     getHospitals: function (req, res, next) {
-        var pageIndex = +req.query.pageIndex;
-        var pageSize = +req.query.pageSize;
+        var conditions = [];
+        if (req.query.districtId) conditions.push('districtId like \'%' + req.query.districtId + '%\'');
+        if (req.query.provId) conditions.push('provId like \'%' + req.query.provId + '%\'');
+        if (req.query.cityId) conditions.push('cityId like \'%' + req.query.cityId + '%\'');
         hospitalDAO.findAll({
-            from: (pageIndex - 1) * pageSize,
-            size: pageSize
-        }).then(function (hospitals) {
-            hospitals.pageIndex = pageIndex;
+            from: req.query.from,
+            size: req.query.size
+        }, conditions, req.query.lat, req.query.lng).then(function (hospitals) {
+            hospitals && hospitals.forEach(function (hospital) {
+                if (hospital.distance) {
+                    hospital.distance = hospital.distance < 1000 ? hospital.distance + '米' : (hospital.distance / 1000).toFixed(2) + '公里';
+                } else {
+                    hospital.distance = 0;
+                }
+            });
+            return res.send({ret: 0, data: hospitals});
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
+    },
+    searchHospital: function (req, res, next) {
+        var conditions = [];
+        if (req.query.districtId) conditions.push('districtId like \'%' + req.query.districtId + '%\'');
+        if (req.query.provId) conditions.push('provId like \'%' + req.query.provId + '%\'');
+        if (req.query.cityId) conditions.push('cityId like \'%' + req.query.cityId + '%\'');
+        hospitalDAO.searchHospital(req.query.name, {
+            from: req.query.from,
+            size: req.query.size
+        }, conditions, req.query.lat, req.query.lng).then(function (hospitals) {
+            hospitals && hospitals.forEach(function (hospital) {
+                if (hospital.distance) {
+                    hospital.distance = hospital.distance < 1000 ? hospital.distance + '米' : (hospital.distance / 1000).toFixed(2) + '公里';
+                } else {
+                    hospital.distance = '0';
+                }
+            });
             return res.send({ret: 0, data: hospitals});
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});
@@ -24,13 +54,21 @@ module.exports = {
     },
 
     getHospitalById: function (req, res, next) {
-        hospitalDAO.findById(req.user.hospitalId).then(function (hospitals) {
-            res.send({ret: 0, data: hospitals[0]})
+        var queue = 'bid:' + req.user.id + ':favorite:' + 'hospitals';
+        hospitalDAO.findHospitalById(req.params.hospitalId).then(function (hospitals) {
+            if (!hospitals.length) return res.send({ret: 0, data: null});
+            var hospital = hospitals[0];
+            hospital.images = hospital.images ? hospital.images.split(',') : [];
+            return redis.zrankAsync(queue, req.params.hospitalId).then(function (index) {
+                hospital.favorited = (index != null);
+                res.send({ret: 0, data: hospital});
+            });
         }).catch(function (err) {
-            res.send({ret: 0, message: err.message})
+            res.send({ret: 1, message: err.message});
         });
         return next();
     },
+
     addPatient: function (req, res, next) {
         hospitalDAO.findSalesManPatientsBy(req.body.mobile, req.user.hospitalId).then(function (result) {
             var patient = _.assign(req.body, {
@@ -108,9 +146,9 @@ module.exports = {
                 return moment(date, 'YYYY-MM-DD HH:mm').isAfter(moment());
             });
 
-           var sortedPlans =  _.sortBy(filteredPlans, function(item) {
-               var date = item.day + ' ' + item.period.split('-')[0];
-               return moment(date, 'YYYY-MM-DD HH:mm');
+            var sortedPlans = _.sortBy(filteredPlans, function (item) {
+                var date = item.day + ' ' + item.period.split('-')[0];
+                return moment(date, 'YYYY-MM-DD HH:mm');
             });
             var data = _.groupBy(sortedPlans, function (plan) {
                 moment.locale('zh_CN');
@@ -222,7 +260,7 @@ module.exports = {
                         name: registration.patientName,
                         realName: registration.patientName,
                         mobile: registration.patientMobile,
-                        gender:registration.gender,
+                        gender: registration.gender,
                         createDate: new Date(),
                         password: md5(registration.patientMobile.substring(registration.patientMobile.length - 6, registration.patientMobile.length)),
                         creator: req.user.id

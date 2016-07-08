@@ -28,8 +28,7 @@ module.exports = [
     {
         method: "post",
         path: "/api/resetPwd",
-        handler: authController.resetPwd,
-        secured: 'user'
+        handler: authController.resetPwd
     },
     {
         method: "put",
@@ -106,6 +105,12 @@ module.exports = [
         method: "del",
         path: "/api/patients/:mobile",
         handler: hospitalController.deletePatient,
+        secured: "user"
+    },
+    {
+        method: "get",
+        path: "/api/hospitals/search",
+        handler: hospitalController.searchHospital,
         secured: "user"
     }
 ];

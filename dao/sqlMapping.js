@@ -11,7 +11,7 @@ module.exports = {
         findPatientByBasicInfoId: 'select * from Patient where patientBasicInfoId = ? and hospitalId=?',
         insertPatientBasicInfo: 'insert PatientBasicInfo set ?',
         update: 'update Hospital set ? where id=?',
-        findById: 'select * from Hospital where id=?',
+        findById: 'select id, name, tag, images, address, icon, introduction, customerServiceUid, contactMobile, contact,telephone, trafficRoute from Hospital where id = ?',
         insertRegistration: 'insert Registration set ?',
         findShiftPeriodById: 'select * from ShiftPeriod where hospitalId = ? and id =?',
         findRegistrations: 'select patientMobile, patientName, departmentName, doctorName, createDate, totalFee as amount, concat(DATE_FORMAT(r.registerDate, \'%Y-%m-%d \') , p.`name`) as shiftPeriod from Registration r left JOIN ShiftPeriod p on r.shiftPeriod = p.id where r.businessPeopleId =? order by r.createDate desc limit ?, ?',

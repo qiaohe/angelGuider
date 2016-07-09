@@ -366,5 +366,73 @@ module.exports = {
         })
 
         return next();
+    },
+    favoriteDoctor: function (req, res, next) {
+        var uid = req.user.id;
+        var queue = 'b:uid:' + uid + ':favorite:' + 'doctors';
+        var doctorId = req.body.doctorId;
+        var result = {uid: uid, doctorId: doctorId, favourited: true};
+        redis.zrankAsync(queue, doctorId).then(function (index) {
+            if (index == null) return redis.zadd(queue, new Date().getTime(), doctorId);
+            result.favourited = false;
+            return redis.zrem(queue, doctorId);
+        }).then(function () {
+            res.send({ret: 0, data: result});
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
+    }
+    ,
+    favoriteHospital: function (req, res, next) {
+        var uid = req.user.id;
+        var queue = 'b:uid:' + uid + ':favorite:' + 'hospitals';
+        var hospitalId = req.body.hospitalId;
+        var favoriteQueue = 'b:h:' + hospitalId + ':favorite:' + 'patients';
+        var result = {uid: uid, hospitalId: hospitalId, favourited: true};
+        redis.zrankAsync(queue, hospitalId).then(function (index) {
+            if (index == null) {
+                redis.zadd(favoriteQueue, new Date().getTime(), uid);
+                return redis.zadd(queue, new Date().getTime(), hospitalId);
+            }
+            result.favourited = false;
+            redis.zrem(favoriteQueue, uid);
+            return redis.zrem(queue, hospitalId);
+        }).then(function () {
+            return hospitalDAO.findHospitalById(hospitalId);
+        }).then(function (cs) {
+            res.send({ret: 0, data: result});
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
+    },
+
+    getFavouritedDoctors: function (req, res, next) {
+        var uid = req.user.id;
+        var queue = 'b:uid:' + uid + ':favorite:' + 'doctors';
+        redis.zrangeAsync([queue, +req.query.from, +req.query.from + (+req.query.size) - 1]).then(function (ids) {
+            if (!ids.length) return [];
+            return hospitalDAO.findDoctorByIds(ids.join(','));
+        }).then(function (doctors) {
+            res.send({ret: 0, data: doctors});
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
+    },
+
+    getFavouritedHospitals: function (req, res, next) {
+        var uid = req.user.id;
+        var queue = 'b:uid:' + uid + ':favorite:' + 'hospitals';
+        redis.zrangeAsync([queue, +req.query.from, +req.query.from + (+req.query.size) - 1]).then(function (ids) {
+            if (!ids.length) return [];
+            return hospitalDAO.findHospitalsByIdsMin(ids.join(','));
+        }).then(function (hospitals) {
+            res.send({ret: 0, data: hospitals});
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
     }
 }

@@ -27,7 +27,6 @@ module.exports = {
             return db.query('select id, name, tag, icon, concat(provId,cityId, districtId) as city from Hospital where name like \'%' + name + '%\' and ' + conditions.join(' and ') + 'limit ' + page.from + ',' + page.size);
         return db.query('select id, name, tag, icon, concat(provId,cityId, districtId) as city from Hospital where name like \'%' + name + '%\' limit ' + page.from + ',' + page.size);
     },
-
     findHospitalById: function (hospitalId) {
         return db.query(sqlMapping.hospital.findById, hospitalId);
     },
@@ -118,5 +117,14 @@ module.exports = {
     },
     findPeriods: function (hospitalId) {
         return db.query('select id from ShiftPeriod where hospitalId = ? order by name', hospitalId);
+    },
+    findDoctorByIds: function (ids) {
+        var sql = 'select id, name, departmentName,hospitalId, hospitalName, headPic,registrationFee, speciality,jobTitle ' +
+            'from Doctor where id in(' + ids + ') order by field(id, ' + ids + ')';
+        return db.query(sql);
+    },
+    findHospitalsByIdsMin: function (ids) {
+        var sql = 'select id, name, tag, images, address, icon, customerServiceUid from Hospital where id in(' + ids + ') order by field(id, ' + ids + ')';
+        return db.query(sql);
     }
 }

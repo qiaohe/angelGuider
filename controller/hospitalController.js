@@ -358,15 +358,6 @@ module.exports = {
         return next();
     },
 
-    deletePatient: function (req, res, next) {
-        hospitalDAO.deletePatient(req.user.id, req.params.mobile).then(function (result) {
-            res.send({ret: 0, message: '删除成功。'})
-        }).catch(function (err) {
-            res.send({ret: 1, message: err.message});
-        })
-
-        return next();
-    },
     favoriteDoctor: function (req, res, next) {
         var uid = req.user.id;
         var queue = 'b:uid:' + uid + ':favorite:' + 'doctors';

@@ -94,17 +94,10 @@ module.exports = [
         handler: hospitalController.getMyPreRegistrationsByMonth,
         secured: "user"
     },
-
     {
         method: "get",
         path: "/api/patients/:pid/agentPreRegistrations",
         handler: hospitalController.getPreRegistrationsOfPatient,
-        secured: "user"
-    },
-    {
-        method: "del",
-        path: "/api/patients/:mobile",
-        handler: hospitalController.deletePatient,
         secured: "user"
     },
     {

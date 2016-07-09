@@ -100,9 +100,6 @@ module.exports = {
         return db.query(sqlMapping.hospital.findRegistrationsByPid, [pid, uid, page.from, page.size]);
     },
 
-    deletePatient: function (salesManId, mobile) {
-        return db.query(sqlMapping.hospital.deletePatient, [salesManId, mobile]);
-    },
     updatePatientAgentTimes: function (pid) {
         return db.query(sqlMapping.hospital.updatePatientAgentTimes, pid);
     },

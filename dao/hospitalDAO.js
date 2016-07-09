@@ -30,13 +30,7 @@ module.exports = {
     findHospitalById: function (hospitalId) {
         return db.query(sqlMapping.hospital.findById, hospitalId);
     },
-    addPatient: function (patient) {
-        return db.query(sqlMapping.patient.addPatient, patient);
-    },
-    findPatients: function (uid, page, keyWords) {
-        if (keyWords) return db.query(sqlMapping.patient.findPatientsByKeyWords, [uid, '%' + keyWords + '%', '%' + keyWords + '%', page.from, page.size]);
-        return db.query(sqlMapping.patient.findPatients, [uid, page.from, page.size]);
-    },
+    
     findDepartmentsBy: function (hospitalId) {
         return db.query(sqlMapping.hospital.findByHospital, hospitalId);
     },
@@ -49,19 +43,7 @@ module.exports = {
     findShiftPlans: function (doctorId, start, end, pid) {
         return db.query(sqlMapping.hospital.findShitPlans, [+doctorId, start, end, +doctorId, +pid]);
     },
-    findPatientByMobile: function (mobile) {
-        return db.query(sqlMapping.hospital.findPatientByMobile, mobile);
-    },
-    findBySalesManPatients: function (uid, mobile) {
-        return db.query(sqlMapping.hospital.findBySalesManPatients, [uid, mobile]);
-    },
-    findBySalesManPatientsByMobile: function (mobile) {
-        return db.query(sqlMapping.hospital.findBySalesManPatientsByMobile, mobile);
-    },
 
-    updatePatient: function (patient) {
-        return db.query(sqlMapping.patient.updatePatient, [patient, patient.id]);
-    },
     findShiftPlanByDoctorAndShiftPeriod: function (doctorId, day, shiftPeriod) {
         return db.query(sqlMapping.hospital.findShiftPlanByDoctorAndShiftPeriod, [doctorId, day, shiftPeriod]);
     },
@@ -99,16 +81,7 @@ module.exports = {
     findRegistrationsByPid: function (uid, pid, page) {
         return db.query(sqlMapping.hospital.findRegistrationsByPid, [pid, uid, page.from, page.size]);
     },
-
-    updatePatientAgentTimes: function (pid) {
-        return db.query(sqlMapping.hospital.updatePatientAgentTimes, pid);
-    },
-    updatePatientAgentable: function (mobile, salesManId) {
-        return db.query(sqlMapping.hospital.updatePatientAgentable, [mobile, salesManId]);
-    },
-    findSalesManPatientsBy: function (mobile, hospitalId) {
-        return db.query(sqlMapping.hospital.findSalesManPatientsBy, [mobile, hospitalId]);
-    },
+    
     findHospitalIds: function () {
         return db.query('select id from Hospital');
     },

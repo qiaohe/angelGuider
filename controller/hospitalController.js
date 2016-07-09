@@ -69,43 +69,6 @@ module.exports = {
         return next();
     },
 
-    addPatient: function (req, res, next) {
-        hospitalDAO.findSalesManPatientsBy(req.body.mobile, req.user.hospitalId).then(function (result) {
-            var patient = _.assign(req.body, {
-                salesMan: req.user.id,
-                createDate: new Date(),
-                agentRegistrationTimes: 0,
-                agentable: result[0].count < 1,
-                isBinded: 0,
-                hospitalId: req.user.hospitalId
-            });
-            hospitalDAO.addPatient(patient).then(function (result) {
-                patient.id = result.insertId;
-                res.send({ret: 0, data: patient});
-            }).catch(function (err) {
-                res.send({ret: 1, message: err.message});
-            });
-        });
-        return next();
-    },
-
-    getPatients: function (req, res, next) {
-        hospitalDAO.findPatients(req.user.id, {from: +req.query.from, size: +req.query.size}).then(function (patients) {
-            if (patients.length < 1) return res.send({ret: 0, data: []});
-            res.send({ret: 0, data: patients});
-        });
-        return next();
-    },
-    searchPatients: function (req, res, next) {
-        hospitalDAO.findPatients(req.user.id, {
-            from: +req.query.from,
-            size: +req.query.size
-        }, req.query.q).then(function (patients) {
-            if (patients.length < 1) return res.send({ret: 0, data: []});
-            res.send({ret: 0, data: patients});
-        });
-        return next();
-    },
     getDepartments: function (req, res, next) {
         var hospitalId = req.user.hospitalId;
         hospitalDAO.findDepartmentsBy(hospitalId).then(function (departments) {
@@ -175,38 +138,7 @@ module.exports = {
         });
         return next();
     },
-    getPatientByMobile: function (req, res, next) {
-        var mobile = req.params.mobile;
-        var data = {exists: false, patient: {}};
-        hospitalDAO.findBySalesManPatients(req.user.id, mobile).then(function (patients) {
-            data.exists = patients.length > 0;
-            if (data.exists) {
-                data.patient = patients[0];
-            }
-            return hospitalDAO.findPatientByMobile(mobile);
-        }).then(function (patients) {
-            if (patients.length > 0) {
-                data.patient = patients[0];
-                res.send({ret: 0, data: data})
-            } else {
-                return hospitalDAO.findBySalesManPatientsByMobile(mobile).then(function (patients) {
-                    data.patient = patients[0];
-                    res.send({ret: 0, data: data});
-                })
-            }
-        }).catch(function (err) {
-            res.send({ret: 1, message: err.message});
-        })
-    },
-    updatePatient: function (req, res, next) {
-        var patient = req.body;
-        patient.id = patient.pid;
-        delete patient.pid;
-        hospitalDAO.updatePatient(req.body).then(function (result) {
-            res.send({ret: 0, message: '更改成功'})
-        });
-        return next();
-    },
+
     agentPreRegistration: function (req, res, next) {
         var registration = req.body;
         var pid = req.body.pid;
@@ -325,29 +257,6 @@ module.exports = {
     },
     getMyPreRegistrations: function (req, res, next) {
         hospitalDAO.findRegistrations(req.user.id, {
-            from: +req.query.from,
-            size: +req.query.size
-        }).then(function (registrations) {
-            res.send({ret: 0, data: registrations});
-        }).catch(function (err) {
-            res.send({ret: 1, message: err.message});
-        });
-        return next();
-    },
-    getMyPreRegistrationsByMonth: function (req, res, next) {
-        hospitalDAO.findRegistrationsByMonth(req.user.id, req.params.month, {
-            from: +req.query.from,
-            size: +req.query.size
-        }).then(function (registrations) {
-            res.send({ret: 0, data: registrations});
-        }).catch(function (err) {
-            res.send({ret: 1, message: err.message});
-        });
-        return next();
-    },
-
-    getPreRegistrationsOfPatient: function (req, res, next) {
-        hospitalDAO.findRegistrationsByPid(req.user.id, +req.params.pid, {
             from: +req.query.from,
             size: +req.query.size
         }).then(function (registrations) {

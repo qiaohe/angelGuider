@@ -90,18 +90,6 @@ module.exports = [
     },
     {
         method: "get",
-        path: "/api/my/:month/agentPreRegistrations",
-        handler: hospitalController.getMyPreRegistrationsByMonth,
-        secured: "user"
-    },
-    {
-        method: "get",
-        path: "/api/patients/:pid/agentPreRegistrations",
-        handler: hospitalController.getPreRegistrationsOfPatient,
-        secured: "user"
-    },
-    {
-        method: "get",
         path: "/api/hospitals/search",
         handler: hospitalController.searchHospital,
         secured: "user"

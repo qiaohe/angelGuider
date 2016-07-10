@@ -8,11 +8,19 @@ module.exports = {
     updatePassword: function (password, userName) {
         return db.query(sqlMapping.angelGuider.updatePassword, [password, userName]);
     },
-    update: function(angelGuider) {
+    update: function (angelGuider) {
         return db.query(sqlMapping.angelGuider.update, [angelGuider, angelGuider.id]);
     },
-    findPerformances: function(salesMan) {
-        return db.query(sqlMapping.performance.findPerformances, [salesMan]);
-
+    insertAngelGuider: function (guider) {
+        return db.query(sqlMapping.angelGuider.insertAngelGuider, guider);
+    },
+    updateAngelGuider: function (guider) {
+        return db.query(sqlMapping.angelGuider.updateAngelGuider, [guider, guider.id]);
+    },
+    removeAngelGuider: function (id) {
+        return db.query(sqlMapping.angelGuider.removeAngelGuider, id);
+    },
+    findById: function (id) {
+        return db.query(sqlMapping.angelGuider.findById, id);
     }
 }

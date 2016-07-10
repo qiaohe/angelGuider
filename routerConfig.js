@@ -1,6 +1,7 @@
 var authController = require('./controller/authController');
 var thirdPartyController = require('./controller/thirdPartyController');
 var hospitalController = require('./controller/hospitalController');
+var angelGuiderController = require('./controller/angelGuiderController');
 module.exports = [
     {
         method: "post",
@@ -117,5 +118,30 @@ module.exports = [
         path: "/api/favorites/hospitals",
         handler: hospitalController.getFavouritedHospitals,
         secured: "user"
+    },
+    {
+        method: "post",
+        path: "/api/angelGuiders",
+        handler: angelGuiderController.addAngelGuider,
+        secured: "user"
+    },
+    {
+        method: "put",
+        path: "/api/angelGuiders",
+        handler: angelGuiderController.updateAngelGuider,
+        secured: "user"
+    },
+    {
+        method: "del",
+        path: "/api/angelGuiders/:id",
+        handler: angelGuiderController.removeAngelGuider,
+        secured: "user"
+    },
+    {
+        method: "get",
+        path: "/api/angelGuiders/:id",
+        handler: angelGuiderController.getAngelGuider,
+        secured: "user"
     }
+
 ];

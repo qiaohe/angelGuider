@@ -23,7 +23,11 @@ module.exports = {
         findByUserName: 'select * from AngelGuider where name = ?',
         updatePassword: 'update AngelGuider set password=? where name=?',
         update: 'update angelGuider set ? where id=?',
-        updateCheckInCount: 'update angelGuider set checkInCount = checkInCount + 1 where id=?'
+        updateCheckInCount: 'update angelGuider set checkInCount = checkInCount + 1 where id=?',
+        insertAngelGuider: 'insert AngelGuider set ?',
+        updateAngelGuider: 'update AngelGuider set ? where id = ?',
+        removeAngelGuider: 'delete from AngelGuider  where id = ?',
+        findById: 'select * from AngelGuider where id = ?'
     }
 }
 

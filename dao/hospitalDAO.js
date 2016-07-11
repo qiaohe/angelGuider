@@ -40,8 +40,8 @@ module.exports = {
     findDoctorById: function (doctorId) {
         return db.query(sqlMapping.hospital.findDoctorById, doctorId);
     },
-    findShiftPlans: function (doctorId, start, end, pid) {
-        return db.query(sqlMapping.hospital.findShitPlans, [+doctorId, start, end, +doctorId, +pid]);
+    findShiftPlans: function (doctorId, start, end) {
+        return db.query(sqlMapping.hospital.findShitPlans, [+doctorId, start, end, +doctorId]);
     },
 
     findShiftPlanByDoctorAndShiftPeriod: function (doctorId, day, shiftPeriod) {

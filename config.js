@@ -50,10 +50,10 @@ module.exports = {
         force: 0,
         downloadUrl: "http://7xt9es.com2.z0.glb.qiniucdn.com/apk/runapp/pztApp-yingyongbao-release.apk"
     },
-    guider:{
-        defaultPassword:'111111'
+    guider: {
+        defaultPassword: '111111'
     },
-    angelGuiderStatus:['禁用','正常']
+    angelGuiderStatus: ['禁用', '正常']
 
 };
 

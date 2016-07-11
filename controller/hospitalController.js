@@ -103,7 +103,7 @@ module.exports = {
         var doctorId = req.params.doctorId;
         var start = moment(req.query.d).add(-1, 'd').format('YYYY-MM-DD');
         var end = moment(req.query.d).add(1, 'w').format('YYYY-MM-DD');
-        hospitalDAO.findShiftPlans(doctorId, start, end, req.query.pid).then(function (plans) {
+        hospitalDAO.findShiftPlans(doctorId, start, end).then(function (plans) {
             var filteredPlans = _.filter(plans, function (p) {
                 var date = p.day + ' ' + p.period.split('-')[0];
                 return moment(date, 'YYYY-MM-DD HH:mm').isAfter(moment());
@@ -141,21 +141,11 @@ module.exports = {
 
     agentPreRegistration: function (req, res, next) {
         var registration = req.body;
-        var pid = req.body.pid;
         hospitalDAO.findShiftPlanByDoctorAndShiftPeriod(registration.doctorId, registration.registerDate, registration.shiftPeriod).then(function (plans) {
             if (!plans.length || (plans[0].plannedQuantity <= +plans[0].actualQuantity)) {
                 return res.send({ret: 1, message: i18n.get('doctor.shift.plan.invalid')});
             } else {
-                hospitalDAO.findBySalesManPatientById(req.body.pid).then(function (ps) {
-                    delete registration.pid;
-                    var p = ps[0];
-                    registration = _.assign(registration, {
-                        patientName: p.name, patientMobile: p.mobile,
-                        gender: p.gender,
-                        createDate: new Date()
-                    });
-                    return hospitalDAO.findDoctorById(registration.doctorId);
-                }).then(function (doctors) {
+                return hospitalDAO.findDoctorById(registration.doctorId).then(function (doctors) {
                     var doctor = doctors[0];
                     registration = _.assign(registration, {
                         departmentId: doctor.departmentId,
@@ -169,7 +159,7 @@ module.exports = {
                         doctorHeadPic: doctor.headPic,
                         paymentType: 1,
                         status: 0,
-                        registrationType: 7,
+                        registrationType: 8,
                         memberType: 1,
                         businessPeopleId: req.user.id,
                         businessPeopleName: req.user.name,
@@ -228,15 +218,11 @@ module.exports = {
                     return hospitalDAO.insertRegistration(registration);
                 }).then(function () {
                     return hospitalDAO.updateShiftPlan(registration.doctorId, registration.registerDate, registration.shiftPeriod);
-                }).then(function () {
-                    return hospitalDAO.updatePatientAgentable(registration.patientMobile, req.user.id);
-                }).then(function () {
-                    return hospitalDAO.updatePatientAgentTimes(pid);
                 }).then(function (result) {
                     return hospitalDAO.findShiftPeriodById(req.user.hospitalId, registration.shiftPeriod);
                 }).then(function (result) {
-                    redis.incr('h:' + req.user.hospitalId + ':u:' + req.user.id + ':r:' + moment().format('YYYYMMDD'));
-                    redis.incr('h:' + req.user.hospitalId + ':u:' + req.user.id + ':r:' + moment().format('YYYYMM'));
+                    redis.incr('u:' + req.user.id + ':r');
+                    redis.incr('u:' + req.user.id + ':r:' + moment().format('YYYYMM'));
                     return res.send({
                         ret: 0,
                         data: {

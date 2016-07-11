@@ -137,5 +137,4 @@ module.exports = [
         handler: angelGuiderController.getAngelGuider,
         secured: "user"
     }
-
 ];

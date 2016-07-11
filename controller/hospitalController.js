@@ -70,7 +70,7 @@ module.exports = {
     },
 
     getDepartments: function (req, res, next) {
-        var hospitalId = req.user.hospitalId;
+        var hospitalId = req.params.hospitalId;
         hospitalDAO.findDepartmentsBy(hospitalId).then(function (departments) {
             return res.send({ret: 0, data: departments});
         }).catch(function (err) {
@@ -80,7 +80,7 @@ module.exports = {
     },
     getDoctorsByDepartment: function (req, res, next) {
         var departmentId = req.params.departmentId;
-        var hospitalId = req.user.hospitalId;
+        var hospitalId = req.params.hospitalId;
         hospitalDAO.findDoctorsByDepartment(hospitalId, departmentId).then(function (doctors) {
             return res.send({ret: 0, data: doctors});
         }).catch(function (err) {

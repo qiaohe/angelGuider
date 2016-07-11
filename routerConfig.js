@@ -49,21 +49,15 @@ module.exports = [
     },
     {
         method: "get",
-        path: "/api/departments",
+        path: "/api/hospitals/:hospitalId/departments",
         handler: hospitalController.getDepartments,
         secured: "user"
     },
     {
         method: "get",
-        path: "/api/departments/:departmentId/doctors",
+        path: "/api/hospitals/:hospitalId/departments/:departmentId/doctors",
         handler: hospitalController.getDoctorsByDepartment,
         secured: "user"
-    },
-    {
-        method: "get",
-        path: "/api/my/hospital",
-        handler: hospitalController.getHospitalById,
-        secured: 'user'
     },
     {
         method: "get",

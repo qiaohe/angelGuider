@@ -120,6 +120,12 @@ module.exports = [
         secured: "user"
     },
     {
+        method: "get",
+        path: "/api/angelGuiders",
+        handler: angelGuiderController.getAngelGuiders,
+        secured: "user"
+    },
+    {
         method: "put",
         path: "/api/angelGuiders",
         handler: angelGuiderController.updateAngelGuider,

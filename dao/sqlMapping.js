@@ -20,6 +20,8 @@ module.exports = {
         findAll: 'select SQL_CALC_FOUND_ROWS h.*, e.name as administratorName from Hospital h left JOIN Employee e on e.id = h.administrator order by h.createDate desc limit ?, ?'
     },
     angelGuider: {
+        findAll: 'select id, name, headPic, gender, mobile, realName, status from AngelGuider where agency = ? order by createDate desc',
+        findByKeywords: 'select id, name, headPic, gender, mobile, realName, status from AngelGuider where agency = ? and (mobile like ? or realName like ?) order by createDate desc',
         findByUserName: 'select * from AngelGuider where name = ?',
         updatePassword: 'update AngelGuider set password=? where name=?',
         update: 'update angelGuider set ? where id=?',

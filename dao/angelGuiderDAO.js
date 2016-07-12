@@ -2,6 +2,10 @@
 var db = require('../common/db');
 var sqlMapping = require('./sqlMapping');
 module.exports = {
+    findAll: function (uid, keywords) {
+        if (!keywords) return db.query(sqlMapping.angelGuider.findAll, uid);
+        return db.query(sqlMapping.angelGuider.findByKeywords, [uid, '%' + keywords + '%', '%' + keywords + '%']);
+    },
     findByUserName: function (userName) {
         return db.query(sqlMapping.angelGuider.findByUserName, userName);
     },

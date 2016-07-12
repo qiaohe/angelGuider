@@ -50,6 +50,15 @@ module.exports = {
             res.send({ret: 1, message: err.message})
         });
         return next();
+    },
+    getAngelGuiders: function (req, res, next) {
+        angelGuiderDAO.findAll(req.user.id, req.query.q).then(function (guiders) {
+            if (guiders.length < 1) return res.send({ret: 0, data: []});
+            guiders.forEach(function (guider) {
+                guider.status = config.angelGuiderStatus[guider.status];
+            });
+            res.send({ret: 0, data: guiders});
+        });
+        return next();
     }
-
 }

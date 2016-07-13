@@ -53,7 +53,6 @@ module.exports = {
     guider: {
         defaultPassword: '111111'
     },
-    angelGuiderStatus: ['禁用', '正常']
-
+    angelGuiderStatus: ['正常', '禁用']
 };
 

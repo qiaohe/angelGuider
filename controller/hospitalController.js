@@ -3,7 +3,6 @@ var config = require('../config');
 var i18n = require('../i18n/localeMessage');
 var hospitalDAO = require('../dao/hospitalDAO');
 var _ = require('lodash');
-var Promise = require('bluebird');
 var moment = require('moment');
 var redis = require('../common/redisClient');
 var md5 = require('md5');
@@ -163,18 +162,19 @@ module.exports = {
                         memberType: 1,
                         businessPeopleId: req.user.id,
                         businessPeopleName: req.user.name,
-                        creator: req.user.id
+                        creator: req.user.id,
+                        createDate: new Date()
                     });
                     return hospitalDAO.findPatientBasicInfoBy(registration.patientMobile);
                 }).then(function (patientBasicInfoList) {
                     if (patientBasicInfoList.length) {
                         registration.patientBasicInfoId = patientBasicInfoList[0].id;
                         return redis.incrAsync('doctor:' + registration.doctorId + ':d:' + registration.registerDate + ':period:' + registration.shiftPeriod + ':incr').then(function (seq) {
-                            return redis.getAsync('h:' + req.user.hospitalId + ':p:' + registration.shiftPeriod).then(function (sp) {
+                            return redis.getAsync('h:' + registration.hospitalId + ':p:' + registration.shiftPeriod).then(function (sp) {
                                 registration.sequence = sp + seq;
                                 registration.outPatientType = 0;
                                 registration.outpatientStatus = 5;
-                                return hospitalDAO.findPatientByBasicInfoId(registration.patientBasicInfoId, req.user.hospitalId);
+                                return hospitalDAO.findPatientByBasicInfoId(registration.patientBasicInfoId, registration.hospitalId);
                             });
                         });
                     }
@@ -189,11 +189,11 @@ module.exports = {
                     }).then(function (result) {
                         registration.patientBasicInfoId = result.insertId;
                         return redis.incrAsync('doctor:' + registration.doctorId + ':d:' + registration.registerDate + ':period:' + registration.shiftPeriod + ':incr').then(function (seq) {
-                            return redis.getAsync('h:' + req.user.hospitalId + ':p:' + registration.shiftPeriod).then(function (sp) {
+                            return redis.getAsync('h:' + registration.hospitalId + ':p:' + registration.shiftPeriod).then(function (sp) {
                                 registration.sequence = sp + seq;
                                 registration.outPatientType = 0;
                                 registration.outpatientStatus = 5;
-                                return hospitalDAO.findPatientByBasicInfoId(registration.patientBasicInfoId, req.user.hospitalId);
+                                return hospitalDAO.findPatientByBasicInfoId(registration.patientBasicInfoId, registration.hospitalId);
                             });
                         });
                     });
@@ -202,7 +202,7 @@ module.exports = {
                         return redis.incrAsync('member.no.incr').then(function (memberNo) {
                             return hospitalDAO.insertPatient({
                                 patientBasicInfoId: registration.patientBasicInfoId,
-                                hospitalId: req.user.hospitalId,
+                                hospitalId: registration.hospitalId,
                                 memberType: 1,
                                 balance: 0.00,
                                 memberCardNo: registration.hospitalId + '-1-' + _.padLeft(memberNo, 7, '0'),
@@ -219,7 +219,7 @@ module.exports = {
                 }).then(function () {
                     return hospitalDAO.updateShiftPlan(registration.doctorId, registration.registerDate, registration.shiftPeriod);
                 }).then(function (result) {
-                    return hospitalDAO.findShiftPeriodById(req.user.hospitalId, registration.shiftPeriod);
+                    return hospitalDAO.findShiftPeriodById(registration.hospitalId, registration.shiftPeriod);
                 }).then(function (result) {
                     redis.incr('u:' + req.user.id + ':r');
                     redis.incr('u:' + req.user.id + ':r:' + moment().format('YYYYMM'));

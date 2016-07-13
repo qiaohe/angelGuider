@@ -9,9 +9,8 @@ module.exports = {
     addAngelGuider: function (req, res, next) {
         var guider = _.assign(req.body, {
             createDate: new Date(),
-            realName: req.body.name,
             balance: 0,
-            status: 0,
+            status: 1,
             agency: req.user.id,
             agencyName: req.user.name,
             password: md5(config.guider.defaultPassword)

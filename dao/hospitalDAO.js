@@ -30,7 +30,7 @@ module.exports = {
     findHospitalById: function (hospitalId) {
         return db.query(sqlMapping.hospital.findById, hospitalId);
     },
-    
+
     findDepartmentsBy: function (hospitalId) {
         return db.query(sqlMapping.hospital.findByHospital, hospitalId);
     },
@@ -71,8 +71,13 @@ module.exports = {
     findShiftPeriodById: function (hospitalId, periodId) {
         return db.query(sqlMapping.hospital.findShiftPeriodById, [hospitalId, periodId]);
     },
-    findRegistrations: function (salesManId, page) {
-        return db.query(sqlMapping.hospital.findRegistrations, [salesManId, page.from, page.size]);
+    findRegistrations: function (guiderId, page, status) {
+        var sql = sqlMapping.hospital.findRegistrations;
+        if (status == 0) sql = sql + ' and r.outPatientStatus in (0, 6)';
+        if (status == 1) sql = sql + ' and r.outPatientStatus=1';
+        if (status == 2) sql = sql + ' and r.outPatientStatus in (2,3,4,5)';
+        sql = sql + ' order by r.createDate desc limit ?, ?';
+        return db.query(sql, [guiderId, page.from, page.size]);
     },
 
     findRegistrationsByMonth: function (salesManId, month, page) {
@@ -81,7 +86,7 @@ module.exports = {
     findRegistrationsByPid: function (uid, pid, page) {
         return db.query(sqlMapping.hospital.findRegistrationsByPid, [pid, uid, page.from, page.size]);
     },
-    
+
     findHospitalIds: function () {
         return db.query('select id from Hospital');
     },

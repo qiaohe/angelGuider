@@ -12,7 +12,7 @@ module.exports = {
         findById: 'select id, name, tag, images, address, icon, introduction, customerServiceUid, contactMobile, contact,telephone, trafficRoute from Hospital where id = ?',
         insertRegistration: 'insert Registration set ?',
         findShiftPeriodById: 'select * from ShiftPeriod where hospitalId = ? and id =?',
-        findRegistrations: 'select patientMobile, patientName, departmentName, doctorName, createDate, totalFee as amount, concat(DATE_FORMAT(r.registerDate, \'%Y-%m-%d \') , p.`name`) as shiftPeriod from Registration r left JOIN ShiftPeriod p on r.shiftPeriod = p.id where r.businessPeopleId =? order by r.createDate desc limit ?, ?',
+        findRegistrations: 'select patientMobile, patientName, departmentName, doctorName, r.recipeFee, r.recommendationFee, r.preScriptionFee, r.hospitalName,r.outpatientStatus, createDate, totalFee as amount, concat(DATE_FORMAT(r.registerDate, \'%Y-%m-%d \') , p.`name`) as shiftPeriod from Registration r left JOIN ShiftPeriod p on r.shiftPeriod = p.id where r.businessPeopleId =? ',
         findDoctorById: 'select id, name, departmentName,hospitalId, hospitalName, headPic,registrationFee, speciality,introduction, images,jobTitle, departmentId, jobTitleId,commentCount from Doctor where id =?',
         findByDepartment: 'select id, name, departmentName, hospitalName, headPic,registrationFee, speciality,jobTitle from Doctor where hospitalId = ?  and departmentId = ?',
         findShitPlans: 'select p.`name` as period, `day`, actualQuantity, plannedQuantity, p.id as periodId from ShiftPlan sp, ShiftPeriod p where sp.shiftPeriod = p.id and sp.doctorId = ? and sp.day>? and sp.day<=? and sp.actualQuantity < sp.plannedQuantity and sp.plannedQuantity > 0 order by sp.day, sp.shiftPeriod',
@@ -29,7 +29,23 @@ module.exports = {
         insertAngelGuider: 'insert AngelGuider set ?',
         updateAngelGuider: 'update AngelGuider set ? where id = ?',
         removeAngelGuider: 'delete from AngelGuider  where id = ?',
-        findById: 'select * from AngelGuider where id = ?'
+        findById: 'select * from AngelGuider where id = ?',
+        findAccount: 'select ag.realName, bank,account, accountName, ac.balance, ac.availableBalance from AngelGuider ag left join Account ac on ag.id = ac.uid where ag.id = ?'
+    },
+    device: {
+        insert: 'insert AngelGuiderDevice set ?',
+        findByToken: 'select * from AngelGuider where token = ?',
+        update: 'update AngelGuiderDevice set ? where id =?',
+        findTokenByUid: 'select token from AngelGuiderDevice where uid=?',
+        findByUid: 'select * from AngelGuiderDevice where uid=?'
+    },
+    notification: {
+        insert: 'insert AngelGuiderNotification set ?',
+        findAll: 'select * from AngelGuiderNotification where uid=? order by id desc limit ?, ?',
+        update: 'update AngelGuiderNotification set ? where id =?',
+        delete: 'delete from AngelGuiderNotification where id =?'
+    },
+    account:{
+        insert:'insert Account set ?'
     }
 }
-

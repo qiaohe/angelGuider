@@ -2,10 +2,14 @@
 var config = require('../config');
 var i18n = require('../i18n/localeMessage');
 var hospitalDAO = require('../dao/hospitalDAO');
+var deviceDAO = require('../dao/deviceDAO');
+var pusher = require('../domain/NotificationPusher');
 var _ = require('lodash');
 var moment = require('moment');
 var redis = require('../common/redisClient');
 var md5 = require('md5');
+var util = require('util');
+
 module.exports = {
     getHospitals: function (req, res, next) {
         var conditions = [];
@@ -223,6 +227,24 @@ module.exports = {
                 }).then(function (result) {
                     redis.incr('u:' + req.user.id + ':r');
                     redis.incr('u:' + req.user.id + ':r:' + moment().format('YYYYMM'));
+                    deviceDAO.findTokenByUid(req.user.id).then(function (tokens) {
+                        if (tokens.length && tokens[0]) {
+                            var notificationBody = {};
+                            notificationBody = util.format(config.registrationNotificationTemplate, registration.patientName + (registration.gender == 0 ? '先生' : '女士'),
+                                registration.hospitalName + registration.departmentName + registration.doctorName, moment(registration.registerDate).format('YYYY-MM-DD') + ' ' + result[0].name);
+                            pusher.push({
+                                body: notificationBody,
+                                title: '预约提醒',
+                                audience: {registration_id: [tokens[0].token]},
+                                uid: req.user.id,
+                                hospitalName: registration.hospitalName,
+                                hospitalId: registration.hospitalId,
+                                type: 0
+                            }, function (err, result) {
+                                if (err) throw err;
+                            });
+                        }
+                    });
                     return res.send({
                         ret: 0,
                         data: {
@@ -245,7 +267,7 @@ module.exports = {
         hospitalDAO.findRegistrations(req.user.id, {
             from: +req.query.from,
             size: +req.query.size
-        }).then(function (registrations) {
+        }, req.query.status).then(function (registrations) {
             res.send({ret: 0, data: registrations});
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});

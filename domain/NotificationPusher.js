@@ -16,14 +16,12 @@ module.exports = {
                     title: notification.title,
                     extra: JSON.stringify(notification.extra),
                     createDate: new Date(),
+                    hospitalId: notification.hospitalId,
+                    hospitalName: notification.hospitalName,
                     sendno: response.sendno,
                     msg_id: response.msg_id,
                     uid: notification.uid,
-                    patientName: notification.patientName,
-                    patientMobile: notification.patientMobile,
-                    type: notification.type,
-                    unread: 1,
-                    hospitalId: notification.hospitalId
+                    type: notification.type
                 }).then(function (result) {
                     return callback(err, result);
                 })

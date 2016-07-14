@@ -14,10 +14,22 @@ module.exports = {
             status: 0,
             agency: req.user.id,
             agencyName: req.user.name,
+            accountName: req.body.realName,
             password: md5(config.guider.defaultPassword)
         });
         angelGuiderDAO.insertAngelGuider(guider).then(function (result) {
             guider.id = result.insertId;
+        }).then(function (result) {
+            return angelGuiderDAO.insertAccount({
+                uid: guider.id,
+                lastDate: new Date(),
+                accountNo: 'B' + req.user.id + '-' + moment().format('YYMMDD') + guider.id,
+                balance: 0.00,
+                availableBalance: 0.00,
+                status: 0,
+                type: 0
+            })
+        }).then(function (result) {
             res.send({ret: 0, data: guider, message: '导医账号已成功开通，初始密码为' + config.guider.defaultPassword})
         }).catch(function (err) {
             res.send({ret: 1, message: err.message})
@@ -50,7 +62,8 @@ module.exports = {
             return redis.getAsync('u:' + guider.id + ':r');
         }).then(function (reply) {
             guider.totalRegistrationCount = (reply == null ? 0 : +reply);
-            return redis.getAsync('u:' + guider.id + ':r:' + moment().format('YYYYMM'))
+
+
         }).then(function (reply) {
             guider.monthlyRegistrationCount = (reply == null ? 0 : +reply);
             res.send({ret: 0, data: guider});
@@ -66,6 +79,14 @@ module.exports = {
                 guider.status = config.angelGuiderStatus[guider.status];
             });
             res.send({ret: 0, data: guiders});
+        });
+        return next();
+    },
+    getAccountInfo: function (req, res, next) {
+        angelGuiderDAO.findAccount(req.user.id).then(function (result) {
+            res.send({ret: 0, data: result[0]});
+        }).catch(function (err) {
+            res.send({ret: 0, messsage: err.message});
         });
         return next();
     }

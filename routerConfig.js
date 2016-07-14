@@ -2,6 +2,7 @@ var authController = require('./controller/authController');
 var thirdPartyController = require('./controller/thirdPartyController');
 var hospitalController = require('./controller/hospitalController');
 var angelGuiderController = require('./controller/angelGuiderController');
+var deviceController = require('./controller/deviceController');
 module.exports = [
     {
         method: "post",
@@ -142,5 +143,24 @@ module.exports = [
         path: "/api/angelGuiders/:id",
         handler: angelGuiderController.getAngelGuider,
         secured: "user"
-    }
+    },
+    {
+        method: "post",
+        path: "/api/devices",
+        handler: deviceController.addDevice,
+        secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/notifications",
+        handler: deviceController.getNotifications,
+        secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/accountInfo",
+        handler: angelGuiderController.getAccountInfo,
+        secured: 'user'
+    },
+
 ];

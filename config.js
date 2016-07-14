@@ -4,7 +4,7 @@ module.exports = {
     server: {
         name: 'angel guider mobile app restful api',
         version: '0.0.1',
-        host: 'localhost',
+        host: '121.42.171.213',
         port: 8888
     },
     db: {
@@ -37,10 +37,9 @@ module.exports = {
         expireTime: 1800000,
         apikey: '410ac09436843c0270f513a0d84802cc'
     },
-    qiniu: {
-        ak: "0d02DpW7tBPiN3TuZYV7WcxmN1C9aCiNZeW9fp5W",
-        sk: "7zD3aC6xpvp_DfDZ0LJhjMq6n6nB6UVDbl37C5FZ",
-        prefix: "http://7xrtp2.com2.z0.glb.qiniucdn.com/"
+    jpush: {
+        appKey: "8daa305a57a2fe95621a3c7c",
+        masterSecret: "4c493872004cd346184165b2"
     },
     gender: ['男', '女'],
     versionInfo: {
@@ -53,6 +52,7 @@ module.exports = {
     guider: {
         defaultPassword: '111111'
     },
+    registrationNotificationTemplate: '您已为【%s】成功代约【%s医生】门诊，就诊时间%s。请提前半小时到院核对信息、候诊，我们将全程为您提供诚挚服务。',
     angelGuiderStatus: ['正常', '禁用']
 };
 

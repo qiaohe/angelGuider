@@ -18,6 +18,9 @@ module.exports = {
     insertAngelGuider: function (guider) {
         return db.query(sqlMapping.angelGuider.insertAngelGuider, guider);
     },
+    insertAccount: function (account) {
+        return db.query(sqlMapping.account.insert, account);
+    },
     updateAngelGuider: function (guider) {
         return db.query(sqlMapping.angelGuider.updateAngelGuider, [guider, guider.id]);
     },
@@ -26,5 +29,8 @@ module.exports = {
     },
     findById: function (id) {
         return db.query(sqlMapping.angelGuider.findById, id);
+    },
+    findAccount: function (guiderId) {
+        return db.query(sqlMapping.angelGuider.findAccount, guiderId);
     }
 }

@@ -32,5 +32,8 @@ module.exports = {
     },
     findAccount: function (guiderId) {
         return db.query(sqlMapping.angelGuider.findAccount, guiderId);
+    },
+    findBills: function (uid) {
+        return db.query(sqlMapping.angelGuider.tr, guiderId);
     }
 }

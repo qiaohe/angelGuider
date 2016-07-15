@@ -89,5 +89,11 @@ module.exports = {
             res.send({ret: 0, messsage: err.message});
         });
         return next();
+    },
+    getBills: function (req, res, next) {
+        angelGuiderDAO.findBills(req.user.id).thne(function (bills) {
+            res.send({ret: 0, data: bills});
+        })
+        return next()
     }
 }

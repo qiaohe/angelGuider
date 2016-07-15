@@ -9,7 +9,7 @@ var moment = require('moment');
 var redis = require('../common/redisClient');
 var md5 = require('md5');
 var util = require('util');
-
+var Promise = require('bluebird');
 module.exports = {
     getHospitals: function (req, res, next) {
         var conditions = [];
@@ -20,14 +20,15 @@ module.exports = {
             from: req.query.from,
             size: req.query.size
         }, conditions, req.query.lat, req.query.lng).then(function (hospitals) {
-            hospitals && hospitals.forEach(function (hospital) {
-                if (hospital.distance) {
-                    hospital.distance = hospital.distance < 1000 ? hospital.distance + '米' : (hospital.distance / 1000).toFixed(2) + '公里';
-                } else {
-                    hospital.distance = 0;
-                }
+            Promise.map(hospitals, function (hospital) {
+                hospital.distance = (hospital.distance ? hospital.distance < 1000 ? hospital.distance + '米' : (hospital.distance / 1000).toFixed(2) + '公里' : 0);
+                var queue = 'b:uid:' + req.user.id + ':favorite:' + 'hospitals';
+                return redis.zrankAsync(queue, hospital.id).then(function (index) {
+                    hospital.favorited = (index != null);
+                });
+            }).then(function (result) {
+                return res.send({ret: 0, data: hospitals});
             });
-            return res.send({ret: 0, data: hospitals});
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});
         });
@@ -42,14 +43,15 @@ module.exports = {
             from: req.query.from,
             size: req.query.size
         }, conditions, req.query.lat, req.query.lng).then(function (hospitals) {
-            hospitals && hospitals.forEach(function (hospital) {
-                if (hospital.distance) {
-                    hospital.distance = hospital.distance < 1000 ? hospital.distance + '米' : (hospital.distance / 1000).toFixed(2) + '公里';
-                } else {
-                    hospital.distance = '0';
-                }
+            Promise.map(hospitals, function (hospital) {
+                hospital.distance = (hospital.distance ? hospital.distance < 1000 ? hospital.distance + '米' : (hospital.distance / 1000).toFixed(2) + '公里' : 0);
+                var queue = 'b:uid:' + req.user.id + ':favorite:' + 'hospitals';
+                return redis.zrankAsync(queue, hospital.id).then(function (index) {
+                    hospital.favorited = (index != null);
+                });
+            }).then(function (result) {
+                return res.send({ret: 0, data: hospitals});
             });
-            return res.send({ret: 0, data: hospitals});
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});
         });
@@ -57,7 +59,7 @@ module.exports = {
     },
 
     getHospitalById: function (req, res, next) {
-        var queue = 'bid:' + req.user.id + ':favorite:' + 'hospitals';
+        var queue = 'b:uid:' + req.user.id + ':favorite:' + 'hospitals';
         hospitalDAO.findHospitalById(req.params.hospitalId).then(function (hospitals) {
             if (!hospitals.length) return res.send({ret: 0, data: null});
             var hospital = hospitals[0];
@@ -85,7 +87,14 @@ module.exports = {
         var departmentId = req.params.departmentId;
         var hospitalId = req.params.hospitalId;
         hospitalDAO.findDoctorsByDepartment(hospitalId, departmentId).then(function (doctors) {
-            return res.send({ret: 0, data: doctors});
+            Promise.map(doctors, function (doctor) {
+                var queue = 'b:uid:' + req.user.id + ':favorite:' + 'doctors';
+                return redis.zrankAsync(queue, doctor.id).then(function (index) {
+                    doctor.favorited = (index != null);
+                });
+            }).then(function (result) {
+                return res.send({ret: 0, data: doctors});
+            });
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});
         });
@@ -105,7 +114,7 @@ module.exports = {
     getShitPlan: function (req, res, next) {
         var doctorId = req.params.doctorId;
         var start = moment(req.query.d).add(-1, 'd').format('YYYY-MM-DD');
-        var end = moment(req.query.d).add(1, 'w').format('YYYY-MM-DD');
+        var end = moment(req.query.d).add(1, 'M').format('YYYY-MM-DD');
         hospitalDAO.findShiftPlans(doctorId, start, end).then(function (plans) {
             var filteredPlans = _.filter(plans, function (p) {
                 var date = p.day + ' ' + p.period.split('-')[0];
@@ -279,10 +288,10 @@ module.exports = {
         var uid = req.user.id;
         var queue = 'b:uid:' + uid + ':favorite:' + 'doctors';
         var doctorId = req.body.doctorId;
-        var result = {uid: uid, doctorId: doctorId, favourited: true};
+        var result = {uid: uid, doctorId: doctorId, favorited: true};
         redis.zrankAsync(queue, doctorId).then(function (index) {
             if (index == null) return redis.zadd(queue, new Date().getTime(), doctorId);
-            result.favourited = false;
+            result.favorited = false;
             return redis.zrem(queue, doctorId);
         }).then(function () {
             res.send({ret: 0, data: result});
@@ -297,13 +306,13 @@ module.exports = {
         var queue = 'b:uid:' + uid + ':favorite:' + 'hospitals';
         var hospitalId = req.body.hospitalId;
         var favoriteQueue = 'b:h:' + hospitalId + ':favorite:' + 'patients';
-        var result = {uid: uid, hospitalId: hospitalId, favourited: true};
+        var result = {uid: uid, hospitalId: hospitalId, favorited: true};
         redis.zrankAsync(queue, hospitalId).then(function (index) {
             if (index == null) {
                 redis.zadd(favoriteQueue, new Date().getTime(), uid);
                 return redis.zadd(queue, new Date().getTime(), hospitalId);
             }
-            result.favourited = false;
+            result.favorited = false;
             redis.zrem(favoriteQueue, uid);
             return redis.zrem(queue, hospitalId);
         }).then(function () {
@@ -337,6 +346,9 @@ module.exports = {
             if (!ids.length) return [];
             return hospitalDAO.findHospitalsByIdsMin(ids.join(','));
         }).then(function (hospitals) {
+            hospitals && hospitals.forEach(function (result) {
+                result.favorited = true;
+            });
             res.send({ret: 0, data: hospitals});
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});

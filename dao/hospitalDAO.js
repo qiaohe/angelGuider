@@ -99,7 +99,10 @@ module.exports = {
         return db.query(sql);
     },
     findHospitalsByIdsMin: function (ids) {
-        var sql = 'select id, name, tag, images, address,telephone, icon, customerServiceUid from Hospital where id in(' + ids + ') order by field(id, ' + ids + ')';
+        var sql = 'select id, name, tag, images, address, icon, customerServiceUid from Hospital where id in(' + ids + ') order by field(id, ' + ids + ')';
         return db.query(sql);
-    }
+    },
+    searchDoctor: function (name, page) {
+        return db.query('select id, name, departmentName, hospitalName, headPic,registrationFee, speciality,jobTitle from Doctor where name like \'%' + name + '%\' limit ' + page.from + ',' + page.size);
+    },
 }

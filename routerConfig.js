@@ -29,6 +29,12 @@ module.exports = [
     },
     {
         method: "get",
+        path: "/api/doctors/search",
+        handler: hospitalController.searchDoctor,
+        secured: "user"
+    },
+    {
+        method: "get",
         path: "/api/hospitals/:hospitalId",
         handler: hospitalController.getHospitalById,
         secured: 'user'
@@ -88,6 +94,12 @@ module.exports = [
         method: "get",
         path: "/api/my/agentPreRegistrations",
         handler: hospitalController.getMyPreRegistrations,
+        secured: "user"
+    },
+    {
+        method: "get",
+        path: "/api/angelGuiders/:id/agentPreRegistrations",
+        handler: hospitalController.getPreRegistrations,
         secured: "user"
     },
     {
@@ -167,5 +179,18 @@ module.exports = [
         path: "/api/bills",
         handler: angelGuiderController.getBills,
         secured: 'user'
-    }
+    },
+    {
+        method: "post",
+        path: "/api/withdrawApplication",
+        handler: angelGuiderController.postWithdrawApplication,
+        secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/banks/:binCode",
+        handler: angelGuiderController.getBankByBinCode,
+        secured: 'user'
+    },
+    
 ];

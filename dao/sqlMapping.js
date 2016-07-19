@@ -30,7 +30,7 @@ module.exports = {
         updateAngelGuider: 'update AngelGuider set ? where id = ?',
         removeAngelGuider: 'delete from AngelGuider  where id = ?',
         findById: 'select * from AngelGuider where id = ?',
-        findAccount: 'select ag.realName, bank,account, accountName, ac.balance, ac.availableBalance from AngelGuider ag left join Account ac on ag.id = ac.uid where ag.id = ?'
+        findAccount: 'select ag.realName, bank,account, accountName, ac.balance, ac.availableBalance, ag.headPic from AngelGuider ag left join Account ac on ag.id = ac.uid where ag.id = ?'
     },
     device: {
         insert: 'insert AngelGuiderDevice set ?',
@@ -45,8 +45,10 @@ module.exports = {
         update: 'update AngelGuiderNotification set ? where id =?',
         delete: 'delete from AngelGuiderNotification where id =?'
     },
-    account:{
-        insert:'insert Account set ?',
-        findBills: ''
+    account: {
+        insert: 'insert Account set ?',
+        findBankByBinCode: 'select * from BinCode where binCode = ?',
+        insertWithDrawApplication: 'insert AngelGuiderWithdrawApplication set ?',
+        findBills: 'select f.id, flowNo,f.createDate, f.`comment`, amount, hospitalName, r.businessPeopleName from AngelGuiderTransactionFlow f left join Registration r on f.registrationId = r.id where f.uid=?'
     }
 }

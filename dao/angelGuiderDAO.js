@@ -33,7 +33,13 @@ module.exports = {
     findAccount: function (guiderId) {
         return db.query(sqlMapping.angelGuider.findAccount, guiderId);
     },
-    findBills: function (uid) {
-        return db.query(sqlMapping.angelGuider.tr, guiderId);
+    findBills: function (guider) {
+        return db.query(sqlMapping.account.findBills, guider);
+    },
+    insertWithDrawApplication: function (application) {
+        return db.query(sqlMapping.account.insertWithDrawApplication, application);
+    },
+    findBankByBinCode: function (binCode) {
+        return db.query(sqlMapping.account.findBankByBinCode, binCode);
     }
 }

@@ -22,7 +22,7 @@ module.exports = {
         }).then(function (result) {
             return angelGuiderDAO.insertAccount({
                 uid: guider.id,
-                lastDate: new Date(),
+                updateDate: new Date(),
                 accountNo: 'B' + req.user.id + '-' + moment().format('YYMMDD') + guider.id,
                 balance: 0.00,
                 availableBalance: 0.00,
@@ -58,12 +58,9 @@ module.exports = {
         angelGuiderDAO.findById(req.params.id).then(function (guiders) {
             if (!guiders || guiders.length < 1) return res.send({ret: 0, data: {}});
             guider = guiders[0];
-            guider.status = config.angelGuiderStatus[guider.status];
             return redis.getAsync('u:' + guider.id + ':r');
         }).then(function (reply) {
             guider.totalRegistrationCount = (reply == null ? 0 : +reply);
-
-
         }).then(function (reply) {
             guider.monthlyRegistrationCount = (reply == null ? 0 : +reply);
             res.send({ret: 0, data: guider});
@@ -75,9 +72,6 @@ module.exports = {
     getAngelGuiders: function (req, res, next) {
         angelGuiderDAO.findAll(req.user.id, req.query.q).then(function (guiders) {
             if (guiders.length < 1) return res.send({ret: 0, data: []});
-            guiders.forEach(function (guider) {
-                guider.status = config.angelGuiderStatus[guider.status];
-            });
             res.send({ret: 0, data: guiders});
         });
         return next();
@@ -91,9 +85,37 @@ module.exports = {
         return next();
     },
     getBills: function (req, res, next) {
-        angelGuiderDAO.findBills(req.user.id).thne(function (bills) {
-            res.send({ret: 0, data: bills});
-        })
+        angelGuiderDAO.findBills(req.user.id).then(function (bills) {
+            var data = _.chain(bills).groupBy(function (bill) {
+                return moment(bill.createDate).format('YYYYMM');
+            }).map(function (value, key) {
+                var item = {items: value, month: key};
+                item['sum'] = _.reduce(value, function (sum, bill) {
+                    return sum + bill.amount;
+                }, 0);
+                return item;
+            });
+            res.send({ret: 0, data: data});
+        });
         return next()
+    },
+    postWithdrawApplication: function (req, res, next) {
+        var guider = req.user.id;
+        angelGuiderDAO.insertWithDrawApplication(_.assign(req.body, {
+            createDate: new Date(),
+            uid: req.user.id,
+            status: 0
+        }).then(function (result) {
+            res.send({ret: 0, data: '提现申请成功。'})
+        }));
+        return next();
+    },
+    getBankByBinCode: function(req, res, next){
+        var code = req.params.binCode;
+        angelGuiderDAO.findBankByBinCode(code).then(function(banks){
+            if (!banks || banks.length < 1) res.send({ret:0, data:[]});
+            res.send({ret:0, data: banks[0]})
+        })
+        
     }
 }

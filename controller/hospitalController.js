@@ -57,7 +57,22 @@ module.exports = {
         });
         return next();
     },
-
+    searchDoctor: function (req, res, next) {
+        hospitalDAO.searchDoctor(req.query.name, {from: req.query.from, size: req.query.size}).then(function (doctors) {
+            if (!doctors) return res.send({ret: 0, data: []});
+            Promise.map(doctors, function (doctor) {
+                var queue = 'b:uid:' + req.user.id + ':favorite:' + 'doctors';
+                return redis.zrankAsync(queue, doctor.id).then(function (index) {
+                    doctor.favorited = (index != null);
+                });
+            }).then(function (result) {
+                return res.send({ret: 0, data: doctors});
+            });
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
+    },
     getHospitalById: function (req, res, next) {
         var queue = 'b:uid:' + req.user.id + ':favorite:' + 'hospitals';
         hospitalDAO.findHospitalById(req.params.hospitalId).then(function (hospitals) {
@@ -274,6 +289,18 @@ module.exports = {
     },
     getMyPreRegistrations: function (req, res, next) {
         hospitalDAO.findRegistrations(req.user.id, {
+            from: +req.query.from,
+            size: +req.query.size
+        }, req.query.status).then(function (registrations) {
+            res.send({ret: 0, data: registrations});
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
+    },
+
+    getPreRegistrations: function (req, res, next) {
+        hospitalDAO.findRegistrations(req.params.id, {
             from: +req.query.from,
             size: +req.query.size
         }, req.query.status).then(function (registrations) {

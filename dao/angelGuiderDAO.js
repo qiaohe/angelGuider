@@ -7,7 +7,18 @@ module.exports = {
         return db.query(sqlMapping.angelGuider.findByKeywords, [uid, '%' + keywords + '%', '%' + keywords + '%']);
     },
     findByUserName: function (userName) {
-        return db.query(sqlMapping.angelGuider.findByUserName, userName);
+        return db.query(sqlMapping.angelGuider.findByUserName, [userName, userName]);
+    },
+    findByMobile: function (mobile) {
+        return db.query(sqlMapping.angelGuider.findByMobile, mobile)
+    },
+
+    findByInvitationCode: function(code){
+        return db.query(sqlMapping.angelGuider.findByInvitationCode, code)
+    },
+
+    insert: function (guider) {
+        return db.query(sqlMapping.angelGuider.insert, guider);
     },
     updatePassword: function (password, userName) {
         return db.query(sqlMapping.angelGuider.updatePassword, [password, userName]);
@@ -39,7 +50,23 @@ module.exports = {
     insertWithDrawApplication: function (application) {
         return db.query(sqlMapping.account.insertWithDrawApplication, application);
     },
+
+    updateWithDrawApplication: function (application) {
+        return db.query(sqlMapping.account.updateWithDrawApplication, [application, application.id]);
+    },
     findBankByBinCode: function (binCode) {
         return db.query(sqlMapping.account.findBankByBinCode, binCode);
+    },
+    addFeedback: function (feedback) {
+        return db.query(sqlMapping.feedback.insert, feedback);
+    },
+    findFeedbackByRegistrationId: function (registrationId) {
+        return db.query(sqlMapping.feedback.findByRegistrationId, registrationId);
+    },
+    updateRegistrationFeedback: function (rid) {
+        return db.query(sqlMapping.feedback.updateRegistrationFeedback, [1, rid]);
+    },
+    findActivities: function () {
+        return db.query(sqlMapping.feedback.findActivities);
     }
 }

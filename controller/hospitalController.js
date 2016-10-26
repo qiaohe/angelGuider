@@ -10,9 +10,12 @@ var redis = require('../common/redisClient');
 var md5 = require('md5');
 var util = require('util');
 var Promise = require('bluebird');
+var request = require('request');
 module.exports = {
     getHospitals: function (req, res, next) {
         var conditions = [];
+        conditions.push('onlineDateInAngelGuide is not null');
+        conditions.push('angelGuideStatus=0');
         if (req.query.districtId) conditions.push('districtId like \'%' + req.query.districtId + '%\'');
         if (req.query.provId) conditions.push('provId like \'%' + req.query.provId + '%\'');
         if (req.query.cityId) conditions.push('cityId like \'%' + req.query.cityId + '%\'');
@@ -36,6 +39,7 @@ module.exports = {
     },
     searchHospital: function (req, res, next) {
         var conditions = [];
+        conditions.push('onlineDateInAngelGuide is not null');
         if (req.query.districtId) conditions.push('districtId like \'%' + req.query.districtId + '%\'');
         if (req.query.provId) conditions.push('provId like \'%' + req.query.provId + '%\'');
         if (req.query.cityId) conditions.push('cityId like \'%' + req.query.cityId + '%\'');
@@ -189,7 +193,7 @@ module.exports = {
                         registrationType: 8,
                         memberType: 1,
                         businessPeopleId: req.user.id,
-                        businessPeopleName: req.user.name,
+                        businessPeopleName: req.user.realName,
                         creator: req.user.id,
                         createDate: new Date()
                     });
@@ -269,17 +273,29 @@ module.exports = {
                             });
                         }
                     });
-                    return res.send({
-                        ret: 0,
-                        data: {
-                            id: registration.id,
-                            registerDate: registration.registerDate,
-                            hospitalName: registration.hospitalName,
-                            departmentName: registration.departmentName,
-                            doctorName: registration.doctorName, jobTtile: registration.doctorJobTtile,
-                            shiftPeriod: result[0].name
-                        }
-                    });
+                    return hospitalDAO.findHospitalById(registration.hospitalId).then(function (hospitals) {
+                        var address = hospitals[0].address;
+                        var content = util.format(config.sms.registrationNotificationTemplate,
+                            registration.hospitalName + registration.departmentName + registration.doctorName, moment(registration.registerDate).format('YYYY-MM-DD') + ' ' + result[0].name,
+                            registration.hospitalName, address);
+                        var option = {mobile: registration.patientMobile, text: content, apikey: config.sms.apikey};
+                        return request.postAsync({
+                            url: config.sms.providerUrl,
+                            form: option
+                        }).then(function (response, body) {
+                            return res.send({
+                                ret: 0,
+                                data: {
+                                    id: registration.id,
+                                    registerDate: registration.registerDate,
+                                    hospitalName: registration.hospitalName,
+                                    departmentName: registration.departmentName,
+                                    doctorName: registration.doctorName, jobTtile: registration.doctorJobTtile,
+                                    shiftPeriod: result[0].name
+                                }
+                            });
+                        })
+                    })
                 });
             }
         }).catch(function (err) {
@@ -287,6 +303,80 @@ module.exports = {
         });
         return next();
     },
+
+    changeAgentPreRegistration: function (req, res, next) {
+        var registration = req.body;
+        registration.updateDate = new Date();
+        hospitalDAO.findRegistrationById(registration.id).then(function (rs) {
+            var oldRegistration = rs[0];
+            registration.patientName = rs[0].patientName;
+            registration.patientMobile = rs[0].patientMobile;
+            registration.gender = rs[0].gender;
+            registration.patientBasicInfoId = rs[0].patientBasicInfoId;
+            return hospitalDAO.updateShiftPlanDec(rs[0].doctorId, rs[0].registerDate, rs[0].shiftPeriod);
+        }).then(function () {
+            return hospitalDAO.findDoctorById(registration.doctorId)
+        }).then(function (doctors) {
+            var doctor = doctors[0];
+            registration.departmentId = doctor.departmentId;
+            registration.departmentName = doctor.departmentName;
+            registration.hospitalId = doctor.hospitalId;
+            registration.hospitalName = doctor.hospitalName;
+            registration.registrationFee = doctor.registrationFee;
+            registration.doctorName = doctor.name;
+            registration.doctorJobTitle = doctor.jobTitle;
+            registration.doctorJobTitleId = doctor.jobTitleId;
+            registration.doctorHeadPic = doctor.headPic;
+            registration.status = 3;
+            registration.outPatientType = 0;
+            registration.outpatientStatus = 5;
+            return redis.incrAsync('doctor:' + registration.doctorId + ':d:' + registration.registerDate + ':period:' + registration.shiftPeriod + ':incr').then(function (seq) {
+                return redis.getAsync('h:' + doctor.hospitalId + ':p:' + registration.shiftPeriod).then(function (sp) {
+                    registration.sequence = sp + seq;
+                    return hospitalDAO.updateRegistration(registration);
+                });
+            });
+        }).then(function (result) {
+            return hospitalDAO.updateShiftPlan(registration.doctorId, registration.registerDate, registration.shiftPeriod);
+        }).then(function (result) {
+            return hospitalDAO.findPatientByBasicInfoId(req.user.id);
+        }).then(function () {
+            return hospitalDAO.findShiftPeriodById(registration.hospitalId, registration.shiftPeriod);
+        }).then(function (result) {
+            // deviceDAO.findTokenByUid(req.user.id).then(function (tokens) {
+            //     if (tokens.length && tokens[0]) {
+            //         var notificationBody = util.format(config.changeRegistrationTemplate, registration.patientName + (registration.gender == 0 ? '先生' : '女士'),
+            //             registration.hospitalName + registration.departmentName + registration.doctorName, registration.registerDate + ' ' + result[0].name);
+            //         pusher.push({
+            //             body: notificationBody,
+            //             title: '改约成功',
+            //             audience: {registration_id: [tokens[0].token]},
+            //             patientName: registration.patientName,
+            //             patientMobile: registration.patientMobile,
+            //             uid: req.user.id,
+            //             type: 0,
+            //             hospitalId: registration.hospitalId
+            //         }, function (err, result) {
+            //             if (err) throw err;
+            //         });
+            //     }
+            // });
+            return res.send({
+                ret: 0,
+                data: {
+                    registerDate: registration.registerDate,
+                    hospitalName: registration.hospitalName,
+                    departmentName: registration.departmentName,
+                    doctorName: registration.doctorName, jobTtile: registration.doctorJobTtile,
+                    shiftPeriod: result[0].name
+                }
+            });
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
+    },
+
     getMyPreRegistrations: function (req, res, next) {
         hospitalDAO.findRegistrations(req.user.id, {
             from: +req.query.from,
@@ -375,6 +465,7 @@ module.exports = {
         }).then(function (hospitals) {
             hospitals && hospitals.forEach(function (result) {
                 result.favorited = true;
+                result.images = result.images ? result.images.split(',') : [];
             });
             res.send({ret: 0, data: hospitals});
         }).catch(function (err) {

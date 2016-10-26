@@ -11,6 +11,18 @@ module.exports = [
     },
     {
         method: "post",
+        path: "/api/register",
+        handler: authController.register
+    },
+    {
+        method: "get",
+        path: "/api/invitation",
+        handler: authController.getInvitation,
+        secured: 'user'
+    },
+    
+    {
+        method: "post",
         path: "/api/logout",
         handler: authController.logout,
         secured: 'user'
@@ -91,6 +103,13 @@ module.exports = [
         secured: "user"
     },
     {
+        method: "put",
+        path: "/api/preRegistration",
+        handler: hospitalController.changeAgentPreRegistration,
+        secured: "user"
+    },
+
+    {
         method: "get",
         path: "/api/my/agentPreRegistrations",
         handler: hospitalController.getMyPreRegistrations,
@@ -162,6 +181,12 @@ module.exports = [
         handler: deviceController.addDevice,
         secured: 'user'
     },
+
+    {
+        method: "get",
+        path: "/api/versionInfo",
+        handler: thirdPartyController.getVersionInfo
+    },
     {
         method: "get",
         path: "/api/notifications",
@@ -192,5 +217,39 @@ module.exports = [
         handler: angelGuiderController.getBankByBinCode,
         secured: 'user'
     },
-    
+    {
+        method: "del",
+        path: "/api/accounts/unbinding",
+        handler: angelGuiderController.unbindAccount,
+        secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/userAgreement",
+        handler: thirdPartyController.getUserAgreement
+    },
+    {
+        method: "post",
+        path: "/api/registrations/:rid/feedback",
+        handler: angelGuiderController.postFeedback,
+        secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/registrations/:rid/feedback",
+        handler: angelGuiderController.getFeedback,
+        secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/feedbackTypes",
+        handler: angelGuiderController.getFeedbackTypes,
+        secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/activities",
+        handler: angelGuiderController.getActivities,
+        secured: 'user'
+    }
 ];

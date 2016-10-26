@@ -37,5 +37,12 @@ module.exports = {
             }
         });
         return next();
+    },
+    getUserAgreement: function (req, res, next) {
+        res.redirect(config.app.userAgreementUrl, next);
+    },
+    getVersionInfo: function (req, res, next) {
+        res.send({ret: 0, data: config.versionInfo});
+        return next();
     }
 }

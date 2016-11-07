@@ -232,7 +232,14 @@ module.exports = {
         return next();
     },
     getActivities: function (req, res, next) {
-        angelGuiderDAO.findActivities().then(function (activities) {
+        var conditions = [];
+        if (req.query.title) conditions.push('title like \'%' + req.query.title + '%\'');
+        if (req.query.provId) conditions.push('cities like \'%"provId":"' + req.query.provId + '"%\'');
+        if (req.query.cityId) conditions.push('cities like \'%"cityId":"' + req.query.cityId + '"%\'');
+        angelGuiderDAO.findActivities(conditions).then(function (activities) {
+            activities && activities.length > 0 && activities.forEach(function (activity) {
+                if (activity.cities) activity.cities = JSON.stringify(activity.cities);
+            });
             res.send({ret: 0, data: activities});
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});

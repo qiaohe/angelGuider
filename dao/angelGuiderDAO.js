@@ -66,7 +66,11 @@ module.exports = {
     updateRegistrationFeedback: function (rid) {
         return db.query(sqlMapping.feedback.updateRegistrationFeedback, [1, rid]);
     },
-    findActivities: function () {
-        return db.query(sqlMapping.feedback.findActivities);
+    findActivities: function (conditions) {
+        var sql = sqlMapping.feedback.findActivities;
+        if (conditions && conditions.length) {
+            sql = sql + ' where ' + conditions.join(' and ');
+        }
+        return db.query(sql);
     }
 }

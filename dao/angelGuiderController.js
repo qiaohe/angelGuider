@@ -140,6 +140,5 @@ module.exports = {
             if (!banks || banks.length < 1) res.send({ret: 0, data: []});
             res.send({ret: 0, data: banks[0]})
         })
-
     }
 }

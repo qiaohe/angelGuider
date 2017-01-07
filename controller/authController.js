@@ -2,12 +2,29 @@
 var md5 = require('md5');
 var redis = require('../common/redisClient');
 var config = require('../config');
+var crypto = require('crypto');
 var angelGuiderDAO = require('../dao/angelGuiderDAO');
 var i18n = require('../i18n/localeMessage');
 var _ = require('lodash');
 var moment = require('moment');
 var uuid = require('node-uuid');
 var ic = require("../common/invitationCode");
+var xmljs = require('xml2js');
+var parser = new xmljs.Parser();
+var request = require('request');
+var wechat = require('../common/wechat');
+function getOutput(body, message) {
+    var time = Math.round(new Date().getTime() / 1000);
+    return "" +
+        "<xml>" +
+        "<ToUserName><![CDATA[" + body.FromUserName[0] + "]]></ToUserName>" +
+        "<FromUserName><![CDATA[" + body.ToUserName[0] + "]]></FromUserName>" +
+        "<CreateTime>" + time + "</CreateTime>" +
+        "<MsgType><![CDATA[" + "text" + "]]></MsgType>" +
+        "<Content><![CDATA[" + message + "]]></Content>" +
+        "<FuncFlag>" + "0" + "</FuncFlag>" +
+        "</xml>";
+}
 module.exports = {
     login: function (req, res, next) {
         var userName = (req.body && req.body.username) || (req.query && req.query.username);
@@ -151,6 +168,93 @@ module.exports = {
             });
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});
+        });
+        return next();
+    },
+    checkSignature: function (req, res, next) {
+        res.end(req.query.echostr);
+        return next();
+    },
+
+    wechatCallback: function (req, res, next) {
+        var scene = {};
+        parser.parseString(req.body, function (err, result) {
+            if (err) throw err;
+            var body = result.xml;
+            var messageType = body.MsgType[0];
+            if (messageType === 'event') {
+                var eventName = body.Event[0];
+                if (eventName == 'subscribe') {
+                    var openId = body.FromUserName[0];
+                    if (body.EventKey && body.EventKey.length > 0) {
+                        scene = {scene_id: body.EventKey[0].substr(8), ticket: body.Ticket[0]};
+                    }
+                    wechat.getAccessToken(function (err, token) {
+                        var url = config.wechat.getUserInfo.replace('ACCESS_TOKEN', token).replace("OPENID", openId);
+                        request(url, function (err, response, data) {
+                            if (err) throw err;
+                            var wechatUser = JSON.parse(data);
+                            delete wechatUser.subscribe;
+                            delete wechatUser.tagid_list;
+                            delete wechatUser.groupid;
+                            angelGuiderDAO.findWeChatUserByOpenId(wechatUser.openid).then(function (result) {
+                                if (result && result.length < 1) angelGuiderDAO.insertWeChatUser(_.assign(wechatUser, scene)).then(function (result) {
+                                });
+                            })
+                        })
+                    });
+                    res.send(getOutput(body, config.wechat.subscribeMessage));
+                } else if (body.EventKey && body.EventKey.length > 0 && body.Event[0]== 'CLICK') {
+                    angelGuiderDAO.findGuiderByOpenId(body.FromUserName[0]).then(function (result) {
+                        if (result && result.length < 1) {
+                            res.send(getOutput(body, config.wechat.bindMobileMessage));
+                        }
+                    })
+                }
+                console.log(body);
+            } else if (messageType === 'text') {
+            }
+        });
+        return next();
+    },
+
+    createMenu: function (req, res, next) {
+        wechat.getAccessToken(function (err, token) {
+            if (err) throw err;
+            var options = {
+                url: config.wechat.createMenu.replace('ACCESS_TOKEN', token),
+                method: 'POST',
+                json: true,
+                body: req.body
+            };
+            request(options, function (error, response, data) {
+                if (error) throw error;
+                if (response.statusCode == 200) {
+                    res.send('success')
+                }
+            })
+        });
+        return next();
+    },
+
+    getSignature: function (req, res, next) {
+        var ticketUrl = _.cloneDeep(config.wechat.ticketUrl);
+        var timestamp = Math.floor(Date.now() / 1000);
+        var sha1 = crypto.createHash('sha1');
+        wechat.getAccessToken(function (err, token) {
+            request(ticketUrl.replace('TOKEN', token), function (err, ressponse, json) {
+                var ticket = JSON.parse(json);
+                redis.setAsync('jssdk:ticket', ticket.ticket, 1000 * 60 * 60 * 24);
+                res.send({
+                    ret: 0, signature: {
+                        noncestr: config.wechat.noncestr,
+                        timestamp: timestamp,
+                        url: req.query.url,
+                        jsapi_ticket: ticket.ticket,
+                        signature: sha1.update('jsapi_ticket=' + ticket.ticket + '&noncestr=' + config.wechat.noncestr + '&timestamp=' + timestamp + '&url=' + req.query.url).digest('hex')
+                    }
+                });
+            })
         });
         return next();
     }

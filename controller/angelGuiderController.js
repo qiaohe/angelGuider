@@ -7,6 +7,7 @@ var i18n = require('../i18n/localeMessage');
 var angelGuiderDAO = require('../dao/angelGuiderDAO');
 var moment = require('moment');
 var request = require('request-promise');
+var wechat = require('../common/wechat');
 module.exports = {
     addAngelGuider: function (req, res, next) {
         var guider = _.assign(req.body, {
@@ -81,6 +82,7 @@ module.exports = {
             guider.totalRegistrationCount = (reply == null ? 0 : +reply);
         }).then(function (reply) {
             guider.monthlyRegistrationCount = (reply == null ? 0 : +reply);
+            guider.gender = guider.gender ? +guider.gender : 0;
             res.send({ret: 0, data: guider});
         }).catch(function (err) {
             res.send({ret: 1, message: err.message})
@@ -95,8 +97,39 @@ module.exports = {
         return next();
     },
     getAccountInfo: function (req, res, next) {
+        var user = {};
         angelGuiderDAO.findAccount(req.user.id).then(function (result) {
-            res.send({ret: 0, data: result[0]});
+            user = result[0];
+            return redis.ttlAsync('uid:' + user.id + ':qrcode');
+        }).then(function (reply) {
+            if (reply && reply > 0) {
+                return res.send({ret: 0, data: user.id});
+            } else {
+                wechat.getAccessToken(function (err, token) {
+                    if (err) throw err;
+                    return request({
+                        method: 'POST',
+                        uri: _.cloneDeep(config.wechat.createQrCode).replace('TOKEN', token),
+                        body: {
+                            expire_seconds: config.wechat.expire_seconds_qrCode,
+                            action_name: 'QR_SCENE',
+                            action_info: {scene: {scene_id: req.user.id}}
+                        },
+                        json: true
+                    }).then(function (body) {
+                        user.qrCode = body.url;
+                        redis.expireAsync('uid:' + user.id + ':qrcode', body.expire_seconds);
+                        redis.setAsync('ticket:' + body.ticket, user.id);
+                        angelGuiderDAO.update({
+                            id: user.id,
+                            qrCode: user.qrCode,
+                            scene_id: req.user.id
+                        }).then(function (result) {
+                            res.send({ret: 0, data: user});
+                        });
+                    })
+                })
+            }
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});
         });
@@ -148,7 +181,7 @@ module.exports = {
                 bank: guiders[0].bank,
                 branch: guiders[0].branch,
                 accountName: guiders[0].accountName,
-                withdrawNo: moment().format('YYYYMMDD') + _.padLeft(withdraw.withDrawNo, 5, '0')
+                withdrawNo: moment().format('YYYYMMDD') + _.padLeft(withdraw.withdrawNo, 5, '0')
             }));
         }).then(function (result) {
             withdraw.id = result.insertId;
@@ -173,14 +206,16 @@ module.exports = {
             res.send({ret: 1, message: err.message})
         });
         return next();
-    },
+    }
+    ,
     getBankByBinCode: function (req, res, next) {
         var code = req.params.binCode;
         angelGuiderDAO.findBankByBinCode(code).then(function (banks) {
             if (!banks || banks.length < 1) res.send({ret: 0, data: {}, message: '目前不支持此银行'});
             res.send({ret: 0, data: banks[0]})
         })
-    },
+    }
+    ,
     unbindAccount: function (req, res, next) {
         angelGuiderDAO.updateAngelGuider({
             id: req.user.id,
@@ -194,7 +229,8 @@ module.exports = {
             res.send({ret: 1, message: err.message})
         });
         return next();
-    },
+    }
+    ,
     postFeedback: function (req, res, next) {
         var rid = req.params.rid;
         angelGuiderDAO.findFeedbackByRegistrationId(req.params.rid).then(function (feedbacks) {
@@ -214,7 +250,8 @@ module.exports = {
             res.send({ret: 1, message: err.message});
         });
         return next();
-    },
+    }
+    ,
     getFeedback: function (req, res, next) {
         angelGuiderDAO.findFeedbackByRegistrationId(req.params.rid).then(function (feedback) {
             if (!feedback.length) return res.send({ret: 0, data: {}});
@@ -226,11 +263,13 @@ module.exports = {
             res.send({ret: 1, message: err.message});
         });
         return next();
-    },
+    }
+    ,
     getFeedbackTypes: function (req, res, next) {
         res.send({ret: 0, data: config.feedbackTypes});
         return next();
-    },
+    }
+    ,
     getActivities: function (req, res, next) {
         var conditions = [];
         if (req.query.title) conditions.push('title like \'%' + req.query.title + '%\'');

@@ -25,7 +25,7 @@ module.exports = {
         findByUserName: 'select * from AngelGuider where name = ? or mobile = ?',
         findByMobile: 'select * from AngelGuider where mobile = ?',
         findByInvitationCode: 'select * from AngelGuider where invitationCode = ?',
-        updatePassword: 'update AngelGuider set password=? where name=?',
+        updatePassword: 'update AngelGuider set password=? where mobile=?',
         update: 'update AngelGuider set ? where id=?',
         updateCheckInCount: 'update angelGuider set checkInCount = checkInCount + 1 where id=?',
         insertAngelGuider: 'insert AngelGuider set ?',
@@ -33,7 +33,7 @@ module.exports = {
         removeAngelGuider: 'delete from AngelGuider  where id = ?',
         findById: 'select * from AngelGuider where id = ?',
         insert: 'insert AngelGuider set ?',
-        findAccount: 'select ag.realName, bank,branch, account, ag.accountName, ac.balance, ac.availableBalance, ag.headPic from AngelGuider ag left join Account ac on ag.id = ac.uid where ag.id = ? AND ac.type = 0'
+        findAccount: 'select ag.id, ag.realName, bank,branch, account, ag.accountName, ac.balance, ac.availableBalance, ag.headPic, ag.qrCode from AngelGuider ag left join Account ac on ag.id = ac.uid where ag.id = ? AND ac.type = 0'
     },
     device: {
         insert: 'insert AngelGuiderDevice set ?',
@@ -65,5 +65,11 @@ module.exports = {
         findById: 'select * from Registration where id =?',
         updateShiftPlanDec: 'update ShiftPlan set actualQuantity = actualQuantity - 1 where doctorId = ? and day =? and shiftPeriod = ?',
         updateRegistration: "update Registration set ? where id = ?"
+    },
+    wechatUser: {
+        findByOpenId: 'select * from WeChatUser where openid = ?',
+        findByMobile: 'select * from WeChatUser where bindMobile = ?',
+        insert: 'insert WeChatUser set ?',
+        findGuiderByOpenId: 'select * from AngelGuider ag left join WeChatUser we on ag.wechatUserId = we.id where we.openid=?'
     }
 }

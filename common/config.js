@@ -4,7 +4,7 @@ module.exports = {
     server: {
         name: 'cloud platform admin',
         version: '0.0.1',
-        host: 'www.hisforce.cn',
+        host: 'wechat.hisforce.cn',
         port: 8888
     },
     db: {
@@ -27,7 +27,7 @@ module.exports = {
         defaultSysBackground: 'http://7xrtp2.com2.z0.glb.qiniucdn.com/background.jpg'
     },
     redis: {
-        host: 'localhost',
+        host: '127.0.0.1',
         port: 6379
     },
     sms: {

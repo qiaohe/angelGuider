@@ -3,6 +3,7 @@ var thirdPartyController = require('./controller/thirdPartyController');
 var hospitalController = require('./controller/hospitalController');
 var angelGuiderController = require('./controller/angelGuiderController');
 var deviceController = require('./controller/deviceController');
+var wechatController = require('./controller/wechatController');
 module.exports = [
     {
         method: "post",
@@ -20,7 +21,7 @@ module.exports = [
         handler: authController.getInvitation,
         secured: 'user'
     },
-    
+
     {
         method: "post",
         path: "/api/logout",
@@ -251,5 +252,36 @@ module.exports = [
         path: "/api/activities",
         handler: angelGuiderController.getActivities,
         secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/wechat",
+        handler: authController.checkSignature
+    },
+    {
+        method: "post",
+        path: "/api/wechat",
+        handler: authController.wechatCallback
+    },
+    {
+        method: "post",
+        path: "/api/menus",
+        handler: authController.createMenu
+    },
+    {
+        method: "get",
+        path: "/api/signature",
+        handler: authController.getSignature
+    },
+    {
+        method: "get",
+        path: "/api/wechat/registration",
+        handler: wechatController.register
+    },
+    {
+        method: "post",
+        path: "/api/wechat/binding",
+        handler: wechatController.bindMobile
     }
+    
 ];

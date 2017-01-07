@@ -13,7 +13,7 @@ module.exports = {
         return db.query(sqlMapping.angelGuider.findByMobile, mobile)
     },
 
-    findByInvitationCode: function(code){
+    findByInvitationCode: function (code) {
         return db.query(sqlMapping.angelGuider.findByInvitationCode, code)
     },
 
@@ -72,5 +72,17 @@ module.exports = {
             sql = sql + ' where ' + conditions.join(' and ');
         }
         return db.query(sql);
+    },
+    findWeChatUserByOpenId: function (openId) {
+        return db.query(sqlMapping.wechatUser.findByOpenId, openId);
+    },
+    insertWeChatUser: function (weChatUser) {
+        return db.query(sqlMapping.wechatUser.insert, weChatUser);
+    },
+    findGuiderByOpenId: function (openId) {
+        return db.query(sqlMapping.wechatUser.findGuiderByOpenId, openId);
+    },
+    findWeChatUserByMobile: function (mobile) {
+        return db.query(sqlMapping.wechatUser.findByMobile, mobile);
     }
 }

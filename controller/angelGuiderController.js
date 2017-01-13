@@ -8,6 +8,8 @@ var angelGuiderDAO = require('../dao/angelGuiderDAO');
 var moment = require('moment');
 var request = require('request-promise');
 var wechat = require('../common/wechat');
+var util = require('util');
+
 module.exports = {
     addAngelGuider: function (req, res, next) {
         var guider = _.assign(req.body, {
@@ -169,10 +171,12 @@ module.exports = {
     postWithdrawApplication: function (req, res, next) {
         var guider = req.user.id;
         var withdraw = req.body;
+        var accountNo = {};
         redis.incrAsync('w:' + moment().format('YYYYMMDD') + ':incr').then(function (withDrawNo) {
             withdraw.withdrawNo = withDrawNo;
             return angelGuiderDAO.findAccount(guider);
         }).then(function (guiders) {
+            accountNo = guiders[0].account;
             return angelGuiderDAO.insertWithDrawApplication(_.assign(withdraw, {
                 createDate: new Date(),
                 uid: req.user.id,
@@ -201,6 +205,7 @@ module.exports = {
                 accountId: body.accountId
             });
         }).then(function (result) {
+            wechat.sendMessageWithRequest(req, util.format(config.wechat.withdrawApplicationSuccess, accountNo.substr(accountNo.length - 4, 4)));
             res.send({ret: 0, message: '提现申请成功。'})
         }).catch(function (err) {
             res.send({ret: 1, message: err.message})
@@ -244,6 +249,7 @@ module.exports = {
                 feedback.id = result.insertId;
                 return angelGuiderDAO.updateRegistrationFeedback(rid);
             }).then(function (result) {
+                wechat.sendMessageWithRequest(req, config.wechat.feedbackSuccess);
                 res.send({ret: 0, data: feedback});
             });
         }).catch(function (err) {

@@ -12,7 +12,9 @@ module.exports = {
         findById: 'select id, name, tag, recipeShare ,prescriptionShare, recommendationFee, images, address, icon, introduction, customerServiceUid, contactMobile, contact,telephone, trafficRoute from Hospital where id = ?',
         insertRegistration: 'insert Registration set ?',
         findShiftPeriodById: 'select * from ShiftPeriod where hospitalId = ? and id =?',
-        findRegistrations: 'select r.id,r.hospitalId,patientMobile,r.gender,patientName, departmentName, doctorName, r.recipeFee, r.recommendationFee, r.preScriptionFee, r.hospitalName,r.outpatientStatus, createDate, totalFee as amount, concat(DATE_FORMAT(r.registerDate, \'%Y-%m-%d \') , p.`name`) as shiftPeriod, r.hasFeedback from Registration r left JOIN ShiftPeriod p on r.shiftPeriod = p.id where r.businessPeopleId =? ',
+        findRegistrations: 'select r.id,r.hospitalId,patientMobile,r.gender,patientName, departmentName, doctorName, r.recipeFee, r.recommendationFee, r.preScriptionFee, r.hospitalName,r.outpatientStatus, r.createDate, totalFee as amount, concat(DATE_FORMAT(r.registerDate, \'%Y-%m-%d \') , p.`name`) as shiftPeriod, r.hasFeedback from Registration r left JOIN ShiftPeriod p on r.shiftPeriod = p.id where r.businessPeopleId =? ',
+        findOutpatientHistories: 'select r.id,r.hospitalId,patientMobile,r.recipeFee * h.recipeShare * h.angelGuiderShare+r.preScriptionFee * h.prescriptionShare * h.angelGuiderShare as share,r.gender,patientName, departmentName, doctorName, r.recipeFee, r.recommendationFee, r.preScriptionFee, r.hospitalName,r.outpatientStatus, r.createDate, totalFee as amount, concat(DATE_FORMAT(r.registerDate, \'%Y-%m-%d \') , p.`name`) as shiftPeriod, r.hasFeedback from Registration r left JOIN ShiftPeriod p on r.shiftPeriod = p.id left JOIN WeChatUser we on we.bindMobile = r.patientMobile left join Hospital h on h.id = r.hospitalId where we.id =? ',
+        countOutpatientHistories: 'select count(*) as count from Registration r left JOIN WeChatUser w on w.bindMobile = r.patientMobile where w.id =?',
         findDoctorById: 'select id, name, departmentName,hospitalId, hospitalName, headPic,registrationFee, speciality,introduction, images,jobTitle, departmentId, jobTitleId,commentCount from Doctor where id =?',
         findByDepartment: 'select id, name, departmentName, hospitalName, headPic,registrationFee, speciality,jobTitle from Doctor where hospitalId = ?  and departmentId = ?',
         findShitPlans: 'select p.`name` as period, `day`, actualQuantity, plannedQuantity, p.id as periodId from ShiftPlan sp, ShiftPeriod p where sp.shiftPeriod = p.id and sp.doctorId = ? and sp.day>? and sp.day<=? and sp.actualQuantity < sp.plannedQuantity and sp.plannedQuantity > 0 order by sp.day, sp.shiftPeriod',
@@ -68,8 +70,11 @@ module.exports = {
     },
     wechatUser: {
         findByOpenId: 'select * from WeChatUser where openid = ?',
+        update: 'update WeChatUser set ? where id = ?',
         findByMobile: 'select * from WeChatUser where bindMobile = ?',
         insert: 'insert WeChatUser set ?',
+        findOpenIdByGuiderId: 'select w.openid from AngelGuider a left join WeChatUser w on w.guider = a.id where a.id = ?',
+        findPatients: 'select w.* from WeChatUser w left join AngelGuider g on w.guider = g.id where w.scene_id = ? ',
         findGuiderByOpenId: 'select * from AngelGuider ag left join WeChatUser we on ag.wechatUserId = we.id where we.openid=?'
     }
 }

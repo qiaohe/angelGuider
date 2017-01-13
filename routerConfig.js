@@ -21,7 +21,6 @@ module.exports = [
         handler: authController.getInvitation,
         secured: 'user'
     },
-
     {
         method: "post",
         path: "/api/logout",
@@ -101,6 +100,18 @@ module.exports = [
         method: "post",
         path: "/api/agentPreRegistrations",
         handler: hospitalController.agentPreRegistration,
+        secured: "user"
+    },
+    {
+        method: "get",
+        path: "/api/patients/:id/outPatientHistories",
+        handler: wechatController.getMyOutPatientHistories,
+        secured: "user"
+    },
+    {
+        method: "get",
+        path: "/api/patients",
+        handler: hospitalController.getMyPatients,
         secured: "user"
     },
     {
@@ -276,12 +287,48 @@ module.exports = [
     {
         method: "get",
         path: "/api/wechat/registration",
-        handler: wechatController.register
+        handler: wechatController.callback
+    },
+    {
+        method: "get",
+        path: "/api/wechat/activity",
+        handler: wechatController.callback
+    },
+    {
+        method: "get",
+        path: "/api/wechat/me",
+        handler: wechatController.getWeChatUserInfo
+    },
+    {
+        method: "put",
+        path: "/api/wechat/me",
+        handler: wechatController.updateWeChatUserInfo,
+        secured: 'user'
+    },
+    {
+        method: "get",
+        path: "/api/wechat/profile",
+        handler: wechatController.callback
+    },
+    {
+        method: "get",
+        path: "/api/wechat/outpatientHistories",
+        handler: wechatController.callback
+    },
+    {
+        method: "get",
+        path: "/api/wechat/withdraw",
+        handler: wechatController.callback
     },
     {
         method: "post",
         path: "/api/wechat/binding",
         handler: wechatController.bindMobile
+    },
+    {
+        method: "get",
+        path: "/api/outpatientHistories",
+        handler: wechatController.getOutpatientHistories,
+        secured: 'user'
     }
-    
 ];

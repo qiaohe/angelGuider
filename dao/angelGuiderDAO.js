@@ -84,5 +84,11 @@ module.exports = {
     },
     findWeChatUserByMobile: function (mobile) {
         return db.query(sqlMapping.wechatUser.findByMobile, mobile);
+    },
+    updateWeChatUser: function (user) {
+        return db.query(sqlMapping.wechatUser.update, [user, user.id]);
+    },
+    findOpenIdByGuiderId: function (guiderId) {
+        return db.query(sqlMapping.wechatUser.findOpenIdByGuiderId, guiderId);
     }
 }

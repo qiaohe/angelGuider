@@ -13,18 +13,6 @@ var xmljs = require('xml2js');
 var parser = new xmljs.Parser();
 var request = require('request');
 var wechat = require('../common/wechat');
-function getOutput(body, message) {
-    var time = Math.round(new Date().getTime() / 1000);
-    return "" +
-        "<xml>" +
-        "<ToUserName><![CDATA[" + body.FromUserName[0] + "]]></ToUserName>" +
-        "<FromUserName><![CDATA[" + body.ToUserName[0] + "]]></FromUserName>" +
-        "<CreateTime>" + time + "</CreateTime>" +
-        "<MsgType><![CDATA[" + "text" + "]]></MsgType>" +
-        "<Content><![CDATA[" + message + "]]></Content>" +
-        "<FuncFlag>" + "0" + "</FuncFlag>" +
-        "</xml>";
-}
 module.exports = {
     login: function (req, res, next) {
         var userName = (req.body && req.body.username) || (req.query && req.query.username);
@@ -186,7 +174,7 @@ module.exports = {
                 var eventName = body.Event[0];
                 if (eventName == 'subscribe') {
                     var openId = body.FromUserName[0];
-                    if (body.EventKey && body.EventKey.length > 0) {
+                    if (body.EventKey && body.EventKey.length > 0 && body.EventKey[0]) {
                         scene = {scene_id: body.EventKey[0].substr(8), ticket: body.Ticket[0]};
                     }
                     wechat.getAccessToken(function (err, token) {
@@ -197,21 +185,29 @@ module.exports = {
                             delete wechatUser.subscribe;
                             delete wechatUser.tagid_list;
                             delete wechatUser.groupid;
+                            wechatUser.sex = (+wechatUser.sex == 0 ? 1 : 0);
                             angelGuiderDAO.findWeChatUserByOpenId(wechatUser.openid).then(function (result) {
                                 if (result && result.length < 1) angelGuiderDAO.insertWeChatUser(_.assign(wechatUser, scene)).then(function (result) {
                                 });
                             })
                         })
                     });
-                    res.send(getOutput(body, config.wechat.subscribeMessage));
-                } else if (body.EventKey && body.EventKey.length > 0 && body.Event[0]== 'CLICK') {
+                    res.send(wechat.createTextMessage({
+                        from: body.FromUserName[0],
+                        to: body.ToUserName[0],
+                        message: config.wechat.subscribeMessage.replace('OPENID', body.FromUserName[0])
+                    }));
+                } else if (body.EventKey && body.EventKey.length > 0 && body.Event[0] == 'CLICK') {
                     angelGuiderDAO.findGuiderByOpenId(body.FromUserName[0]).then(function (result) {
                         if (result && result.length < 1) {
-                            res.send(getOutput(body, config.wechat.bindMobileMessage));
+                            res.send(wechat.createTextMessage({
+                                from: body.FromUserName[0],
+                                to: body.ToUserName[0],
+                                message: config.wechat.bindMobileMessage.replace('OPENID', body.FromUserName[0])
+                            }));
                         }
                     })
                 }
-                console.log(body);
             } else if (messageType === 'text') {
             }
         });
@@ -243,8 +239,10 @@ module.exports = {
         var sha1 = crypto.createHash('sha1');
         wechat.getAccessToken(function (err, token) {
             request(ticketUrl.replace('TOKEN', token), function (err, ressponse, json) {
+                if (err) throw err;
                 var ticket = JSON.parse(json);
-                redis.setAsync('jssdk:ticket', ticket.ticket, 1000 * 60 * 60 * 24);
+                redis.setAsync('jssdk:ticket', ticket.ticket);
+                redis.expireAsync('jssdk:ticket', 1000 * 60 * 60 * 24);
                 res.send({
                     ret: 0, signature: {
                         noncestr: config.wechat.noncestr,

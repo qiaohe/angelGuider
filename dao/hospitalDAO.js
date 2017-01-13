@@ -103,9 +103,27 @@ module.exports = {
     findRegistrationById: function (rid) {
         return db.query(sqlMapping.registration.findById, rid);
     },
-    
+
     updateRegistration: function (registration) {
         return db.query(sqlMapping.registration.updateRegistration, [registration, registration.id]);
-    }
+    },
+    getPatients: function (uid, page, keywords) {
+        var sql = sqlMapping.wechatUser.findPatients;
+        if (keywords) sql = sql + ' and w.nickname like \'%' + keywords + '%\' or w.bindMobile  like \'%' + keywords + '%\'';
+        sql = sql + ' limit ?, ?';
+        return db.query(sql, [uid, +page.from, +page.size]);
+    },
 
+    findOutpatientHistories: function (uid, page) {
+        var sql = sqlMapping.hospital.findOutpatientHistories;
+        // if (status == 0) sql = sql + ' and r.outPatientStatus in (0, 6)';
+        // if (status == 1) sql = sql + ' and r.outPatientStatus=1';
+        // if (status == 2) sql = sql + ' and r.outPatientStatus in (2,3,4,5)';
+        sql = sql + ' order by r.createDate desc limit ?, ?';
+        return db.query(sql, [uid, page.from, page.size]);
+    },
+    countOutpatientHistories: function (uid) {
+        var sql = sqlMapping.hospital.countOutpatientHistories;
+        return db.query(sql, uid);
+    }
 }

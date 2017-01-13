@@ -7,6 +7,7 @@ var routeConfig = require('../routerConfig');
 var _ = require('lodash');
 var redisClient = require('./redisClient');
 var url = require('url');
+var cookieParser = require('../common/cookieParser');
 function authorizedIfNeeded(req) {
     var routeItem = _.findLast(routeConfig, function (item) {
         var regExp = new RegExp('^' + item.path.replace(/:[(a-zA-Z0-9)]*/g, '[\\w|-]+') + '$');
@@ -20,7 +21,15 @@ function auth() {
     function ensureAuthorized(req, res, next) {
         if (!authorizedIfNeeded(req)) return next();
         var token = req.headers['x-auth-token'];
-        if (!token) return res.send(403, i18n.get("access.not.authorized"));
+        if (!token) {
+            var cookies = cookieParser(req);
+            if (cookies['openid']) {
+                var redirectUrl = config.wechat.bindPhoneNumberPage + '?openid=' + cookies['openid'];
+                res.header('Location', redirectUrl);
+                return res.send(302);
+            }
+            return res.send(403, i18n.get("access.not.authorized"));
+        }
         redisClient.getAsync(token).then(function (reply) {
             if (!reply) return res.send(403, i18n.get("token.invalid"));
             req.user = JSON.parse(reply);

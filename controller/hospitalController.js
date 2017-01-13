@@ -3,6 +3,7 @@ var config = require('../config');
 var i18n = require('../i18n/localeMessage');
 var hospitalDAO = require('../dao/hospitalDAO');
 var deviceDAO = require('../dao/deviceDAO');
+var angelGuiderDAO = require('../dao/angelGuiderDAO');
 var pusher = require('../domain/NotificationPusher');
 var _ = require('lodash');
 var moment = require('moment');
@@ -11,6 +12,10 @@ var md5 = require('md5');
 var util = require('util');
 var Promise = require('bluebird');
 var request = require('request');
+var pinyin = require('pinyin');
+var wechat = require('../common/wechat');
+var cookieParser = require('../common/cookieParser');
+
 module.exports = {
     getHospitals: function (req, res, next) {
         var conditions = [];
@@ -275,6 +280,8 @@ module.exports = {
                     });
                     return hospitalDAO.findHospitalById(registration.hospitalId).then(function (hospitals) {
                         var address = hospitals[0].address;
+                        wechat.sendMessageWithRequest(req, util.format(config.wechat.registrationTemplate, registration.hospitalName + registration.departmentName + registration.doctorName, moment(registration.registerDate).format('YYYY-MM-DD') + ' ' + result[0].name));
+                        var cookies = cookieParser(req);
                         var content = util.format(config.sms.registrationNotificationTemplate,
                             registration.hospitalName + registration.departmentName + registration.doctorName, moment(registration.registerDate).format('YYYY-MM-DD') + ' ' + result[0].name,
                             registration.hospitalName, address);
@@ -468,6 +475,31 @@ module.exports = {
                 result.images = result.images ? result.images.split(',') : [];
             });
             res.send({ret: 0, data: hospitals});
+        }).catch(function (err) {
+            res.send({ret: 1, message: err.message});
+        });
+        return next();
+    },
+    getMyPatients: function (req, res, next) {
+        hospitalDAO.getPatients(req.user.id, {
+            from: req.query.from,
+            size: req.query.size
+        }, req.query.keyWords).then(function (patients) {
+            if (patients && patients.length < 1) return res.send({ret: 0, data: []});
+            Promise.map(patients, function (p) {
+                var py = pinyin(p.nickname, {
+                    style: pinyin.STYLE_NORMAL,
+                    heteronym: false
+                });
+                p.pinyin = py.join('');
+                return hospitalDAO.countOutpatientHistories(p.id).then(function (counts) {
+                    p.countOfOutPatientHistories = counts && counts.length > 0 ? counts[0].count : 0;
+                    return p;
+                })
+            }).then(function (result) {
+                res.send({ret: 0, data: patients});
+            });
+            return next();
         }).catch(function (err) {
             res.send({ret: 1, message: err.message});
         });

@@ -261,8 +261,7 @@ module.exports = [
     {
         method: "get",
         path: "/api/activities",
-        handler: angelGuiderController.getActivities,
-        secured: 'user'
+        handler: angelGuiderController.getActivities
     },
     {
         method: "get",

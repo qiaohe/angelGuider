@@ -122,6 +122,14 @@ module.exports = {
         sql = sql + ' order by r.createDate desc limit ?, ?';
         return db.query(sql, [uid, page.from, page.size]);
     },
+    findOutpatientHistoriesByGuiderId: function (uid, page) {
+        var sql = sqlMapping.hospital.findOutpatientHistoriesByGuiderId;
+        // if (status == 0) sql = sql + ' and r.outPatientStatus in (0, 6)';
+        // if (status == 1) sql = sql + ' and r.outPatientStatus=1';
+        // if (status == 2) sql = sql + ' and r.outPatientStatus in (2,3,4,5)';
+        sql = sql + ' order by r.createDate desc limit ?, ?';
+        return db.query(sql, [uid, page.from, page.size]);
+    },
     countOutpatientHistories: function (uid) {
         var sql = sqlMapping.hospital.countOutpatientHistories;
         return db.query(sql, uid);
